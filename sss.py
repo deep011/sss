@@ -196,6 +196,63 @@ def get_mysql_status(cursor, status):
         status[variable_name] = value
     return
 
+def parse_innodb_status(innodb_status, status):
+    for line in innodb_status.splitlines():
+        if line.startswith("History list length"):
+            fields = line.split()
+            status["inno_history_list"] = fields[3]
+        elif line.startswith("Log sequence number"):
+            fields = line.split()
+            if len(fields) == 5:
+                status["inno_log_bytes_written"] = long(fields[3])*4294967296 + long(fields[4])
+            else:
+                status["inno_log_bytes_written"] = fields[3]
+        elif line.startswith("Log flushed up to"):
+            fields = line.split()
+            if len(fields) == 6:
+                status["inno_log_bytes_flushed"] = long(fields[4])*4294967296 + long(fields[5])
+            else:
+                status["inno_log_bytes_flushed"] = fields[4]
+        elif line.startswith("Last checkpoint at"):
+            fields = line.split()
+            if len(fields) == 5:
+                status["inno_last_checkpoint"] = long(fields[3])*4294967296 + long(fields[4])
+            else:
+                status["inno_last_checkpoint"] = fields[3]
+        elif line.find("queries inside InnoDB") > 0:
+            fields = line.split()
+            status["inno_queries_inside"] = fields[0]
+            status["inno_queries_queued"] = fields[4]
+        elif line.find("read views open inside InnoDB") > 0:
+            status["inno_read_views"] = line.split()[0]
+        elif line.startswith("Mutex spin waits"):
+            fields = line.split()
+            status["inno_mutex_spin_waits"] = fields[3]
+            status["inno_mutex_rounds"] = fields[5]
+            status["inno_mutex_os_waits"] = fields[8]
+        elif line.startswith("RW-shared spins"):
+            fields = line.split()
+            status["inno_shrdrw_spins"] = fields[2]
+            status["inno_shrdrw_rounds"] = fields[4]
+            status["inno_shrdrw_os_waits"] = fields[7]
+        elif line.startswith("RW-excl spins"):
+            fields = line.split()
+            status["inno_exclrw_spins"] = fields[2]
+            status["inno_exclrw_rounds"] = fields[4]
+            status["inno_exclrw_os_waits"] = fields[7]
+
+    return
+
+def get_innodb_status(cursor, status):
+    query= "show engine innodb status"
+    cursor.execute(query)
+
+    for (type, name, innodb_status) in cursor:
+        parse_innodb_status(innodb_status, status)
+        break
+
+    return
+
 mysql_commands_section = StatusSection("cmds", [
 StatusColumn("TPs", 0, column_flags_rate, field_handler_common, ["Com_commit", "Com_rollback"]),
 StatusColumn("QPs", 3, column_flags_rate, field_handler_common, ["Com_select"]),
@@ -221,12 +278,20 @@ StatusColumn("IFSPs", 0, column_flags_rate, field_handler_common, ["Innodb_data_
 StatusColumn("IBPPDirty", 0, column_flags_none, field_handler_common, ["Innodb_buffer_pool_pages_dirty"])
 ])
 
+mysql_innodb_log_section = StatusSection("innodb log", [
+StatusColumn("HisList", 0, column_flags_none, field_handler_common, ["inno_history_list"]),
+StatusColumn("Writen", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_log_bytes_written"]),
+StatusColumn("Flushed", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_log_bytes_flushed"]),
+StatusColumn("Checked", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_last_checkpoint"])
+])
+
 def show_mysql_status():
     sections = [time_section,
                 mysql_commands_section,
                 mysql_net_section,
                 mysql_conn_section,
-                mysql_innodb_section
+                mysql_innodb_section,
+                mysql_innodb_log_section
                 ]
     status = {}
     header_sections = get_sections_header(sections)
@@ -237,6 +302,7 @@ def show_mysql_status():
 
     # Init the first status
     get_mysql_status(mysql_handler, status)
+    get_innodb_status(mysql_handler, status)
     get_status_line(sections, status)
     counter = 0
 
@@ -247,6 +313,7 @@ def show_mysql_status():
             print header_columns
 
         get_mysql_status(mysql_handler, status)
+        get_innodb_status(mysql_handler, status)
         print get_status_line(sections, status)
 
         counter += 1
