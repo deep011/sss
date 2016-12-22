@@ -267,10 +267,11 @@ StatusColumn("NetIn", 3, column_flags_rate|column_flags_bytes, field_handler_com
 StatusColumn("NetOut", 3, column_flags_rate|column_flags_bytes, field_handler_common, ["Bytes_sent"])
 ])
 
-mysql_conn_section = StatusSection("connection", [
-StatusColumn("TryNewConns", 0, column_flags_rate, field_handler_common, ["Connections"]),
-StatusColumn("AbortedConns", 0, column_flags_rate, field_handler_common, ["Aborted_connects"]),
-StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["Threads_connected"])
+mysql_threads_section = StatusSection("threads", [
+StatusColumn("Run", 0, column_flags_none, field_handler_common, ["Threads_running"]),
+StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["Threads_connected"]),
+StatusColumn("Create", 0, column_flags_rate, field_handler_common, ["Threads_created"]),
+StatusColumn("Cache", 0, column_flags_none, field_handler_common, ["Threads_cached"])
 ])
 
 mysql_innodb_log_section = StatusSection("innodb log", [
@@ -292,7 +293,7 @@ def show_mysql_status():
     sections = [time_section,
                 mysql_commands_section,
                 mysql_net_section,
-                mysql_conn_section,
+                mysql_threads_section,
                 mysql_innodb_log_section,
                 mysql_innodb_buffer_pool_usage_section
                 ]
