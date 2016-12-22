@@ -98,7 +98,7 @@ class StatusColumn:
 def field_handler_common(column, status):
     if (column.getFlags()&column_flags_ratio):
         fields = column.getFields()
-        return "%.3f%%"%(float(status[fields[0]])*100/status[float(fields[1])])
+        return "%.3f%%"%(float(status[fields[0]])*100/float(status[fields[1]]))
 
     value_num = 0
     value_str = ''
@@ -273,11 +273,6 @@ StatusColumn("AbortedConns", 0, column_flags_rate, field_handler_common, ["Abort
 StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["Threads_connected"])
 ])
 
-mysql_innodb_section = StatusSection("innodb", [
-StatusColumn("IFSPs", 0, column_flags_rate, field_handler_common, ["Innodb_data_fsyncs"]),
-StatusColumn("IBPPDirty", 0, column_flags_none, field_handler_common, ["Innodb_buffer_pool_pages_dirty"])
-])
-
 mysql_innodb_log_section = StatusSection("innodb log", [
 StatusColumn("HisList", 0, column_flags_none, field_handler_common, ["inno_history_list"]),
 StatusColumn("Writen", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_log_bytes_written"]),
@@ -285,13 +280,21 @@ StatusColumn("Flushed", 0, column_flags_rate|column_flags_bytes, field_handler_c
 StatusColumn("Checked", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_last_checkpoint"])
 ])
 
+mysql_innodb_buffer_pool_usage_section = StatusSection("innodb bp usage", [
+StatusColumn("DataPct", 0, column_flags_ratio, field_handler_common, ["Innodb_buffer_pool_pages_data","Innodb_buffer_pool_pages_total"]),
+StatusColumn("Dirty", 0, column_flags_none, field_handler_common, ["Innodb_buffer_pool_pages_dirty"]),
+StatusColumn("MReads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_reads"]),
+StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_read_requests"]),
+StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_write_requests"])
+])
+
 def show_mysql_status():
     sections = [time_section,
                 mysql_commands_section,
                 mysql_net_section,
                 mysql_conn_section,
-                mysql_innodb_section,
-                mysql_innodb_log_section
+                mysql_innodb_log_section,
+                mysql_innodb_buffer_pool_usage_section
                 ]
     status = {}
     header_sections = get_sections_header(sections)
