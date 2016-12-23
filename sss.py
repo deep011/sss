@@ -180,6 +180,9 @@ class Server:
         self.header_columns = ""
         self.status = {}
 
+    def getName(self):
+        return self.name
+
     def getSupportedSectionsName(self):
         names = ""
         count = len(common_sections) + len(self.sections)
@@ -453,13 +456,14 @@ def usage():
     print '-T: target service type, default is mysql'
     print '-s: sections to show, use comma to split'
     print '-a: addition sections to show, use comma to split'
+    print '-d: removed sections for the showing, use comma to split'
 
 def version():
     return '0.1.0'
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:', ['help', 'version'])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:', ['help', 'version'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -467,6 +471,7 @@ if __name__ == "__main__":
 
     sections_name = []
     sections_name_addition = []
+    sections_name_removed = []
     for opt, arg in opts:
         if opt in ('-h','--help'):
             usage()
@@ -497,6 +502,8 @@ if __name__ == "__main__":
             sections_name = arg.split(',')
         elif opt in ('-a'):
             sections_name_addition = arg.split(',')
+        elif opt in ('-d'):
+            sections_name_removed = arg.split(',')
         else:
             print 'Unhandled option'
             sys.exit(3)
@@ -514,14 +521,20 @@ if __name__ == "__main__":
     for section_name in sections_name:
         ret = server.addSectionToShow(section_name)
         if (ret < 0):
-            print "Section '%s' is not supported" % section_name
-            print "Supported sections: " + server.getSupportedSectionsName()
+            print "Section '%s' is not supported for %s" % (section_name, server.getName())
+            print server.getName() + " supported sections: " + server.getSupportedSectionsName()
             sys.exit(3)
     for section_name in sections_name_addition:
         ret = server.addSectionToShow(section_name)
         if (ret < 0):
-            print "Section '%s' is not supported" % section_name
-            print "Supported sections: " + server.getSupportedSectionsName()
+            print "Section '%s' is not supported for %s" % (section_name, server.getName())
+            print server.getName() + " supported sections: " + server.getSupportedSectionsName()
+            sys.exit(3)
+    for section_name in sections_name_removed:
+        ret = server.removeSectionFromShow(section_name)
+        if (ret < 0):
+            print "Section '%s' is not supported for %s" % (section_name, server.getName())
+            print server.getName() + " supported sections: " + server.getSupportedSectionsName()
             sys.exit(3)
 
     server.initialize(server)
