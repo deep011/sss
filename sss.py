@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 import time
-import mysql.connector
 import getopt
 import sys
+
+import mysql.connector
 
 type_mysql = "mysql"
 support_types=[type_mysql]
@@ -33,7 +34,7 @@ def byte2readable(bytes):
         bytes /= 1024.0
     return "%3.1f%s" % (bytes, 'T')
 
-####### Show #######
+####### Class StatusSection #######
 class StatusSection:
     def __init__(self, name, columns):
         self.name = name
@@ -59,6 +60,7 @@ class StatusSection:
 
         return '-'*len_half_left+self.name+'-'*len_half_right
 
+####### Class StatusColumn #######
 column_flags_none=int('0000',2)  # None flags.
 column_flags_rate=int('0001',2)  # The column is shown as rate.
 column_flags_bytes=int('0010',2)  # The column is shown as bytes.
@@ -164,29 +166,118 @@ common_sections = [
 time_section
 ]
 
-def get_supported_sections_name(sections):
-    names = ""
-    count = len(common_sections) + len(sections)
-    for section in common_sections:
-        name = section.getName()
-        if (len(name) > 0):
-            names += "'" + section.getName() + "'"
-            if (count > 1):
-                names += ","
+####### Class Server #######
+class Server:
+    def __init__(self, name, type, initialize_func, clean_func, getStatus_func, sections):
+        self.name = name
+        self.type = type
+        self.initialize = initialize_func   #initialize(server)
+        self.clean = clean_func             #clean(server)
+        self.getStatus = getStatus_func     #getStatus(server)
+        self.sections = sections
+        self.sections_to_show = []
+        self.header_sections = ""
+        self.header_columns = ""
+        self.status = {}
 
-        count -= 1
-    for section in sections:
-        name = section.getName()
-        if (len(name) > 0):
-            names += "'" + section.getName() + "'"
-            if (count > 1):
-                names += ","
+    def getSupportedSectionsName(self):
+        names = ""
+        count = len(common_sections) + len(self.sections)
+        for section in common_sections:
+            name = section.getName()
+            if (len(name) > 0):
+                names += "'" + section.getName() + "'"
+                if (count > 1):
+                    names += ","
 
-        count -= 1
+            count -= 1
 
-    return names
+        for section in self.sections:
+            name = section.getName()
+            if (len(name) > 0):
+                names += "'" + section.getName() + "'"
+                if (count > 1):
+                    names += ","
 
-####### Mysql #######
+            count -= 1
+
+        return names
+
+    def setDefaultSectionsToShow(self, sections):
+        self.sections_to_show = sections
+        return
+
+    def isSectionSupported(self, section_name):
+        for section in common_sections:
+            if (section_name == section.getName()):
+                return True
+
+        for section in self.sections:
+            if (section_name == section.getName()):
+                return True
+
+        return False
+
+    def getSectionByName(self, section_name):
+        for section in common_sections:
+            if (section_name == section.getName()):
+                return section
+
+        for section in self.sections:
+            if (section_name == section.getName()):
+                return section
+
+        return None
+
+    def addSectionToShow(self, section_name):
+        #Check if the section is already exsited.
+        for section in self.sections_to_show:
+            if (section.getName() == section_name):
+                return 0
+
+        section = self.getSectionByName(section_name)
+        if (section == None):
+            return -1
+
+        self.sections_to_show.append(section)
+        return 1
+
+    def removeSectionFromShow(self, section_name):
+        if (self.isSectionSupported(section_name) == False):
+            return -1
+
+        #Delete it if the section is exsited.
+        for section in self.sections_to_show:
+            if (section.getName() == section_name):
+                self.sections_to_show.remove(section)
+                return 1
+
+        return 0
+
+    def showStatus(self):
+        self.header_sections = get_sections_header(self.sections_to_show)
+        self.header_columns = get_columns_header(self.sections_to_show)
+
+        # Init the first status
+        self.getStatus(self)
+        get_status_line(self.sections_to_show, self.status)
+
+        counter = 0
+        while (1):
+            time.sleep(interval)
+            self.status.clear()
+            if (counter % 10 == 0):
+                print self.header_sections
+                print self.header_columns
+
+            self.getStatus(self)
+            print get_status_line(self.sections_to_show, self.status)
+
+            counter += 1
+
+        return
+
+####### Mysql Implement #######
 def mysql_connection_create():
     mysql_conn = mysql.connector.connect(
         user=user,
@@ -281,6 +372,21 @@ def get_innodb_status(cursor, status):
 
     return
 
+def mysql_initialize_for_server(server):
+    server.conn = mysql_connection_create()
+    server.cursor = get_mysql_handler(server.conn)
+    return
+
+def mysql_clean_for_server(server):
+    put_mysql_handler(server.cursor)
+    mysql_connection_destroy(server.conn)
+    return
+
+def get_mysql_status_for_server(server):
+    get_mysql_status(server.cursor, server.status)
+    get_innodb_status(server.cursor, server.status)
+    return
+
 mysql_commands_section = StatusSection("cmds", [
 StatusColumn("TPs", 0, column_flags_rate, field_handler_common, ["Com_commit", "Com_rollback"]),
 StatusColumn("QPs", 3, column_flags_rate, field_handler_common, ["Com_select"]),
@@ -319,78 +425,19 @@ StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_buffe
 StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_write_requests"])
 ])
 
-def show_mysql_status(sections_name):
-    mysql_sections = [
-        mysql_commands_section,
-        mysql_net_section,
-        mysql_threads_section,
-        mysql_innodb_log_section,
-        mysql_innodb_buffer_pool_usage_section
-        ]
-    sections_to_show_default = [
-        time_section,
-        mysql_commands_section,
-        mysql_net_section,
-        mysql_threads_section
-    ]
-
-    sections_to_show = []
-
-    if (len(sections_name) == 0):
-        sections_to_show = sections_to_show_default
-    else:
-        for section_name in sections_name:
-            find = 0
-            if (find == 0):
-                for section in common_sections:
-                    if (section_name == section.getName()):
-                        find = 1
-                        sections_to_show.append(section)
-                        break
-            if (find == 0):
-                for section in mysql_sections:
-                    if (section_name == section.getName()):
-                        find = 1
-                        sections_to_show.append(section)
-                        break
-
-            if (find == 0):
-                print "Section '%s' is not supported" % section_name
-                print "Supported sections: " + get_supported_sections_name(mysql_sections)
-                return
-
-    if (len(sections_to_show) == 0):
-        print "No section to show"
-        return
-
-    status = {}
-    header_sections = get_sections_header(sections_to_show)
-    header_columns = get_columns_header(sections_to_show)
-
-    mysql_conn = mysql_connection_create()
-    mysql_handler = get_mysql_handler(mysql_conn)
-
-    # Init the first status
-    get_mysql_status(mysql_handler, status)
-    get_innodb_status(mysql_handler, status)
-    get_status_line(sections_to_show, status)
-    counter = 0
-
-    while (1):
-        status.clear()
-        if (counter % 10 == 0):
-            print header_sections
-            print header_columns
-
-        get_mysql_status(mysql_handler, status)
-        get_innodb_status(mysql_handler, status)
-        print get_status_line(sections_to_show, status)
-
-        counter += 1
-        time.sleep(interval)
-
-    put_mysql_handler(mysql_handler)
-    mysql_connection_destroy(mysql_conn)
+mysql_sections = [
+mysql_commands_section,
+mysql_net_section,
+mysql_threads_section,
+mysql_innodb_log_section,
+mysql_innodb_buffer_pool_usage_section
+]
+mysql_sections_to_show_default = [
+time_section,
+mysql_commands_section,
+mysql_net_section,
+mysql_threads_section
+]
 
 ####### sss #######
 def usage():
@@ -452,5 +499,23 @@ if __name__ == "__main__":
             print 'Unhandled option'
             sys.exit(3)
 
+    server = None
     if (type == type_mysql):
-        show_mysql_status(sections_name)
+        server = Server("Mysql", type,
+                        mysql_initialize_for_server,
+                        mysql_clean_for_server,
+                        get_mysql_status_for_server,
+                        mysql_sections)
+        if (len(sections_name) == 0):
+            server.setDefaultSectionsToShow(mysql_sections_to_show_default)
+
+    for section_name in sections_name:
+        ret = server.addSectionToShow(section_name)
+        if (ret < 0):
+            print "Section '%s' is not supported" % section_name
+            print "Supported sections: " + server.getSupportedSectionsName()
+            sys.exit(3)
+
+    server.initialize(server)
+    server.showStatus()
+    server.clean(server)
