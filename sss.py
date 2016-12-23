@@ -451,22 +451,22 @@ def usage():
     print '-u: target service user'
     print '-p: target user password'
     print '-T: target service type, default is mysql'
-    print '-s: sections to show'
-    print '-t: show the time'
+    print '-s: sections to show, use comma to split'
+    print '-a: addition sections to show, use comma to split'
 
 def version():
     return '0.1.0'
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:', ['help', 'version'])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:', ['help', 'version'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
         sys.exit(2)
 
     sections_name = []
-
+    sections_name_addition = []
     for opt, arg in opts:
         if opt in ('-h','--help'):
             usage()
@@ -495,6 +495,8 @@ if __name__ == "__main__":
                 sys.exit(3)
         elif opt in ('-s'):
             sections_name = arg.split(',')
+        elif opt in ('-a'):
+            sections_name_addition = arg.split(',')
         else:
             print 'Unhandled option'
             sys.exit(3)
@@ -510,6 +512,12 @@ if __name__ == "__main__":
             server.setDefaultSectionsToShow(mysql_sections_to_show_default)
 
     for section_name in sections_name:
+        ret = server.addSectionToShow(section_name)
+        if (ret < 0):
+            print "Section '%s' is not supported" % section_name
+            print "Supported sections: " + server.getSupportedSectionsName()
+            sys.exit(3)
+    for section_name in sections_name_addition:
         ret = server.addSectionToShow(section_name)
         if (ret < 0):
             print "Section '%s' is not supported" % section_name
