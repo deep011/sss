@@ -39,6 +39,8 @@ class StatusSection:
         self.name = name
         self.columns = columns
 
+    def getName(self):
+        return self.name
     def getColumns(self):
         return self.columns
 
@@ -136,7 +138,7 @@ def get_status_line(sections, status):
 def field_handler_time(column, status):
     return column_format % (9, time.strftime("%H:%M:%S", time.localtime()))
 
-time_section = StatusSection("", [
+time_section = StatusSection("time", [
 StatusColumn("Time", 5, column_flags_string, field_handler_time, [])
 ])
 
@@ -157,6 +159,32 @@ def get_columns_header(sections):
         header += '|'
 
     return header
+
+common_sections = [
+time_section
+]
+
+def get_supported_sections_name(sections):
+    names = ""
+    count = len(common_sections) + len(sections)
+    for section in common_sections:
+        name = section.getName()
+        if (len(name) > 0):
+            names += "'" + section.getName() + "'"
+            if (count > 1):
+                names += ","
+
+        count -= 1
+    for section in sections:
+        name = section.getName()
+        if (len(name) > 0):
+            names += "'" + section.getName() + "'"
+            if (count > 1):
+                names += ","
+
+        count -= 1
+
+    return names
 
 ####### Mysql #######
 def mysql_connection_create():
@@ -267,7 +295,7 @@ StatusColumn("NetIn", 3, column_flags_rate|column_flags_bytes, field_handler_com
 StatusColumn("NetOut", 3, column_flags_rate|column_flags_bytes, field_handler_common, ["Bytes_sent"])
 ])
 
-mysql_threads_section = StatusSection("threads&connection", [
+mysql_threads_section = StatusSection("threads_conns", [
 StatusColumn("Run", 0, column_flags_none, field_handler_common, ["Threads_running"]),
 StatusColumn("Create", 0, column_flags_rate, field_handler_common, ["Threads_created"]),
 StatusColumn("Cache", 0, column_flags_none, field_handler_common, ["Threads_cached"]),
@@ -276,14 +304,14 @@ StatusColumn("Try", 3, column_flags_rate, field_handler_common, ["Connections"])
 StatusColumn("Abort", 0, column_flags_rate, field_handler_common, ["Aborted_connects"])
 ])
 
-mysql_innodb_log_section = StatusSection("innodb log", [
+mysql_innodb_log_section = StatusSection("innodb_log", [
 StatusColumn("HisList", 0, column_flags_none, field_handler_common, ["inno_history_list"]),
 StatusColumn("Writen", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_log_bytes_written"]),
 StatusColumn("Flushed", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_log_bytes_flushed"]),
 StatusColumn("Checked", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_last_checkpoint"])
 ])
 
-mysql_innodb_buffer_pool_usage_section = StatusSection("innodb bp usage", [
+mysql_innodb_buffer_pool_usage_section = StatusSection("innodb_bp_usage", [
 StatusColumn("DataPct", 0, column_flags_ratio, field_handler_common, ["Innodb_buffer_pool_pages_data","Innodb_buffer_pool_pages_total"]),
 StatusColumn("Dirty", 0, column_flags_none, field_handler_common, ["Innodb_buffer_pool_pages_dirty"]),
 StatusColumn("MReads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_reads"]),
@@ -291,17 +319,53 @@ StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_buffe
 StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_write_requests"])
 ])
 
-def show_mysql_status():
-    sections = [time_section,
-                mysql_commands_section,
-                mysql_net_section,
-                mysql_threads_section,
-                mysql_innodb_log_section,
-                mysql_innodb_buffer_pool_usage_section
-                ]
+def show_mysql_status(sections_name):
+    mysql_sections = [
+        mysql_commands_section,
+        mysql_net_section,
+        mysql_threads_section,
+        mysql_innodb_log_section,
+        mysql_innodb_buffer_pool_usage_section
+        ]
+    sections_to_show_default = [
+        time_section,
+        mysql_commands_section,
+        mysql_net_section,
+        mysql_threads_section
+    ]
+
+    sections_to_show = []
+
+    if (len(sections_name) == 0):
+        sections_to_show = sections_to_show_default
+    else:
+        for section_name in sections_name:
+            find = 0
+            if (find == 0):
+                for section in common_sections:
+                    if (section_name == section.getName()):
+                        find = 1
+                        sections_to_show.append(section)
+                        break
+            if (find == 0):
+                for section in mysql_sections:
+                    if (section_name == section.getName()):
+                        find = 1
+                        sections_to_show.append(section)
+                        break
+
+            if (find == 0):
+                print "Section '%s' is not supported" % section_name
+                print "Supported sections: " + get_supported_sections_name(mysql_sections)
+                return
+
+    if (len(sections_to_show) == 0):
+        print "No section to show"
+        return
+
     status = {}
-    header_sections = get_sections_header(sections)
-    header_columns = get_columns_header(sections)
+    header_sections = get_sections_header(sections_to_show)
+    header_columns = get_columns_header(sections_to_show)
 
     mysql_conn = mysql_connection_create()
     mysql_handler = get_mysql_handler(mysql_conn)
@@ -309,7 +373,7 @@ def show_mysql_status():
     # Init the first status
     get_mysql_status(mysql_handler, status)
     get_innodb_status(mysql_handler, status)
-    get_status_line(sections, status)
+    get_status_line(sections_to_show, status)
     counter = 0
 
     while (1):
@@ -320,7 +384,7 @@ def show_mysql_status():
 
         get_mysql_status(mysql_handler, status)
         get_innodb_status(mysql_handler, status)
-        print get_status_line(sections, status)
+        print get_status_line(sections_to_show, status)
 
         counter += 1
         time.sleep(interval)
@@ -340,17 +404,21 @@ def usage():
     print '-u: target service user'
     print '-p: target user password'
     print '-T: target service type, default is mysql'
+    print '-s: sections to show'
+    print '-t: show the time'
 
 def version():
     return '0.1.0'
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:', ['help', 'version'])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:', ['help', 'version'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
         sys.exit(2)
+
+    sections_name = []
 
     for opt, arg in opts:
         if opt in ('-h','--help'):
@@ -376,11 +444,13 @@ if __name__ == "__main__":
                     break
 
             if (find == 0):
-                print "unsupport type"
+                print "Unsupport type"
                 sys.exit(3)
+        elif opt in ('-s'):
+            sections_name = arg.split(',')
         else:
-            print 'unhandled option'
+            print 'Unhandled option'
             sys.exit(3)
 
     if (type == type_mysql):
-        show_mysql_status()
+        show_mysql_status(sections_name)
