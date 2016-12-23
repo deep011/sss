@@ -469,6 +469,7 @@ if __name__ == "__main__":
         usage()
         sys.exit(2)
 
+    all_section = 0
     sections_name = []
     sections_name_addition = []
     sections_name_removed = []
@@ -499,7 +500,10 @@ if __name__ == "__main__":
                 print "Unsupport type"
                 sys.exit(3)
         elif opt in ('-s'):
-            sections_name = arg.split(',')
+            if (arg == 'all'):
+                all_section = 1
+            else:
+                sections_name = arg.split(',')
         elif opt in ('-a'):
             sections_name_addition = arg.split(',')
         elif opt in ('-d'):
@@ -515,21 +519,30 @@ if __name__ == "__main__":
                         mysql_clean_for_server,
                         get_mysql_status_for_server,
                         mysql_sections)
-        if (len(sections_name) == 0):
+        if all_section == 1:
+            server.setDefaultSectionsToShow(common_sections)
+            for section in mysql_sections:
+                server.addSectionToShow(section.getName())
+        elif (len(sections_name) == 0):
             server.setDefaultSectionsToShow(mysql_sections_to_show_default)
 
     for section_name in sections_name:
+        if all_section == 1:
+            break
+
         ret = server.addSectionToShow(section_name)
         if (ret < 0):
             print "Section '%s' is not supported for %s" % (section_name, server.getName())
             print server.getName() + " supported sections: " + server.getSupportedSectionsName()
             sys.exit(3)
+
     for section_name in sections_name_addition:
         ret = server.addSectionToShow(section_name)
         if (ret < 0):
             print "Section '%s' is not supported for %s" % (section_name, server.getName())
             print server.getName() + " supported sections: " + server.getSupportedSectionsName()
             sys.exit(3)
+
     for section_name in sections_name_removed:
         ret = server.removeSectionFromShow(section_name)
         if (ret < 0):
