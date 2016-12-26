@@ -435,13 +435,21 @@ StatusColumn("Delete", 0, column_flags_rate, field_handler_common, ["Innodb_rows
 StatusColumn("Read", 0, column_flags_rate, field_handler_common, ["Innodb_rows_read"])
 ])
 
+mysql_innodb_data_section = StatusSection("innodb_data", [
+StatusColumn("Reads", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_reads"]),
+StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_data_writes"]),
+StatusColumn("Read", 0, column_flags_rate, field_handler_common, ["Innodb_data_read"]),
+StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_written"])
+])
+
 mysql_sections = [
 mysql_commands_section,
 mysql_net_section,
 mysql_threads_section,
 mysql_innodb_log_section,
 mysql_innodb_buffer_pool_usage_section,
-mysql_innodb_rows_section
+mysql_innodb_rows_section,
+mysql_innodb_data_section
 ]
 mysql_sections_to_show_default = [
 time_section,
