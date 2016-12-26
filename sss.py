@@ -326,21 +326,21 @@ def parse_innodb_status(innodb_status, status):
         elif line.startswith("Log sequence number"):
             fields = line.split()
             if len(fields) == 5:
-                status["inno_log_bytes_written"] = long(fields[3])*4294967296 + long(fields[4])
+                status["redo_log_bytes_written"] = long(fields[3])*4294967296 + long(fields[4])
             else:
-                status["inno_log_bytes_written"] = fields[3]
+                status["redo_log_bytes_written"] = fields[3]
         elif line.startswith("Log flushed up to"):
             fields = line.split()
             if len(fields) == 6:
-                status["inno_log_bytes_flushed"] = long(fields[4])*4294967296 + long(fields[5])
+                status["redo_log_bytes_flushed"] = long(fields[4])*4294967296 + long(fields[5])
             else:
-                status["inno_log_bytes_flushed"] = fields[4]
+                status["redo_log_bytes_flushed"] = fields[4]
         elif line.startswith("Last checkpoint at"):
             fields = line.split()
             if len(fields) == 5:
-                status["inno_last_checkpoint"] = long(fields[3])*4294967296 + long(fields[4])
+                status["redo_log_last_checkpoint"] = long(fields[3])*4294967296 + long(fields[4])
             else:
-                status["inno_last_checkpoint"] = fields[3]
+                status["redo_log_last_checkpoint"] = fields[3]
         elif line.find("queries inside InnoDB") > 0:
             fields = line.split()
             status["inno_queries_inside"] = fields[0]
@@ -413,11 +413,16 @@ StatusColumn("Try", 3, column_flags_rate, field_handler_common, ["Connections"])
 StatusColumn("Abort", 0, column_flags_rate, field_handler_common, ["Aborted_connects"])
 ])
 
+mysql_innodb_redo_log_section = StatusSection("innodb_redo_log", [
+StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_bytes_written"]),
+StatusColumn("Flushed", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_bytes_flushed"]),
+StatusColumn("Checked", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_last_checkpoint"])
+])
+
 mysql_innodb_log_section = StatusSection("innodb_log", [
 StatusColumn("HisList", 0, column_flags_none, field_handler_common, ["inno_history_list"]),
-StatusColumn("Writen", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_log_bytes_written"]),
-StatusColumn("Flushed", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_log_bytes_flushed"]),
-StatusColumn("Checked", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["inno_last_checkpoint"])
+StatusColumn("Fsyncs", 0, column_flags_rate, field_handler_common, ["Innodb_os_log_fsyncs"]),
+StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_os_log_written"])
 ])
 
 mysql_innodb_buffer_pool_usage_section = StatusSection("innodb_bp_usage", [
@@ -436,9 +441,9 @@ StatusColumn("Read", 0, column_flags_rate, field_handler_common, ["Innodb_rows_r
 ])
 
 mysql_innodb_data_section = StatusSection("innodb_data", [
-StatusColumn("Reads", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_reads"]),
+StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_data_reads"]),
 StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_data_writes"]),
-StatusColumn("Read", 0, column_flags_rate, field_handler_common, ["Innodb_data_read"]),
+StatusColumn("Read", 4, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_read"]),
 StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_written"])
 ])
 
@@ -446,6 +451,7 @@ mysql_sections = [
 mysql_commands_section,
 mysql_net_section,
 mysql_threads_section,
+mysql_innodb_redo_log_section,
 mysql_innodb_log_section,
 mysql_innodb_buffer_pool_usage_section,
 mysql_innodb_rows_section,
