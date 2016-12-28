@@ -23,16 +23,31 @@ column_format = '%*s'
 
 ####### Util #######
 def byte2readable(bytes):
-    bytes = float(bytes)
-    if bytes > -1024.0 and bytes < 1024.0:
+    bytes_float = float(bytes)
+    if bytes_float > -1024.0 and bytes_float < 1024.0:
         return str(bytes)
     else:
-        bytes /= 1024.0
+        bytes_float /= 1024.0
+
     for count in ['K', 'M', 'G']:
-        if bytes > -1024.0 and bytes < 1024.0:
-            return "%3.1f%s" % (bytes, count)
-        bytes /= 1024.0
-    return "%3.1f%s" % (bytes, 'T')
+        if bytes_float > -1024.0 and bytes_float < 1024.0:
+            return "%3.1f%s" % (bytes_float, count)
+
+        bytes_float /= 1024.0
+    return "%3.1f%s" % (bytes_float, 'T')
+
+def num2readable(number):
+    number_float = float(number)
+    if number_float > -1000.0 and number_float < 1000.0:
+        return str(number)
+    else:
+        number_float /= 1000.0
+    for count in ['k', 'm', 'g']:
+        if number_float > -1000.0 and number_float < 1000.0:
+            return "%3.1f%s" % (number_float, count)
+
+        number_float /= 1000.0
+    return "%3.1f%s" % (number_float, 't')
 
 ####### Class StatusSection #######
 class StatusSection:
@@ -123,8 +138,10 @@ def field_handler_common(column, status):
         if (column.getFlags()&column_flags_string == 0):
             value_str = str(value_num)
 
-    if (column.getFlags() & column_flags_bytes):
+    if (column.getFlags()&column_flags_bytes):
         return byte2readable(value_str)
+    elif (column.getFlags()&column_flags_string == 0):
+        value_str = num2readable(value_str)
 
     return value_str
 
@@ -437,7 +454,7 @@ mysql_innodb_rows_section = StatusSection("innodb_rows", [
 StatusColumn("Insert", 0, column_flags_rate, field_handler_common, ["Innodb_rows_inserted"]),
 StatusColumn("Update", 0, column_flags_rate, field_handler_common, ["Innodb_rows_updated"]),
 StatusColumn("Delete", 0, column_flags_rate, field_handler_common, ["Innodb_rows_deleted"]),
-StatusColumn("Read", 0, column_flags_rate, field_handler_common, ["Innodb_rows_read"])
+StatusColumn("Read", 3, column_flags_rate, field_handler_common, ["Innodb_rows_read"])
 ])
 
 mysql_innodb_data_section = StatusSection("innodb_data", [
