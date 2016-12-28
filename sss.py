@@ -11,6 +11,10 @@ support_types=[type_mysql]
 
 type=type_mysql
 
+output_type = 0 #0 is print, 1 is file.
+output_file_name = ""
+output_file = None
+
 host="127.0.0.1"
 port=3306
 user="root"
@@ -48,6 +52,16 @@ def num2readable(number):
 
         number_float /= 1000.0
     return "%3.1f%s" % (number_float, 't')
+
+def output(content):
+    if (output_type == 0):
+        print content
+    elif (output_type == 1):
+        output_file.write(content + '\n')
+    else:
+        return
+
+    return
 
 ####### Class StatusSection #######
 class StatusSection:
@@ -289,11 +303,11 @@ class Server:
             time.sleep(interval)
             self.status.clear()
             if (counter % 10 == 0):
-                print self.header_sections
-                print self.header_columns
+                output(self.header_sections)
+                output(self.header_columns)
 
             self.getStatus(self)
-            print get_status_line(self.sections_to_show, self.status)
+            output(get_status_line(self.sections_to_show, self.status))
 
             counter += 1
 
@@ -523,13 +537,14 @@ def usage():
     print '-s: sections to show, use comma to split'
     print '-a: addition sections to show, use comma to split'
     print '-d: removed sections for the showing, use comma to split'
+    print '-o: output the status to this file'
 
 def version():
     return '0.1.0'
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:', ['help', 'version'])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:', ['help', 'version'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -574,6 +589,10 @@ if __name__ == "__main__":
             sections_name_addition = arg.split(',')
         elif opt in ('-d'):
             sections_name_removed = arg.split(',')
+        elif opt in ('-o'):
+            output_type = 1
+            output_file_name = arg
+            output_file = open(output_file_name, 'a', 0)
         else:
             print 'Unhandled option'
             sys.exit(3)
@@ -619,3 +638,6 @@ if __name__ == "__main__":
     server.initialize(server)
     server.showStatus()
     server.clean(server)
+
+    if (output_type == 1 and output_file.closed == False):
+        output_file.close()
