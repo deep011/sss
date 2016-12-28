@@ -349,18 +349,18 @@ def parse_innodb_status(innodb_status, status):
             status["inno_read_views"] = line.split()[0]
         elif line.startswith("Mutex spin waits"):
             fields = line.split()
-            status["inno_mutex_spin_waits"] = fields[3]
-            status["inno_mutex_rounds"] = fields[5]
+            status["inno_mutex_spin_waits"] = fields[3][0:-1]
+            status["inno_mutex_rounds"] = fields[5][0:-1]
             status["inno_mutex_os_waits"] = fields[8]
         elif line.startswith("RW-shared spins"):
             fields = line.split()
-            status["inno_shrdrw_spins"] = fields[2]
-            status["inno_shrdrw_rounds"] = fields[4]
+            status["inno_shrdrw_spins"] = fields[2][0:-1]
+            status["inno_shrdrw_rounds"] = fields[4][0:-1]
             status["inno_shrdrw_os_waits"] = fields[7]
         elif line.startswith("RW-excl spins"):
             fields = line.split()
-            status["inno_exclrw_spins"] = fields[2]
-            status["inno_exclrw_rounds"] = fields[4]
+            status["inno_exclrw_spins"] = fields[2][0:-1]
+            status["inno_exclrw_rounds"] = fields[4][0:-1]
             status["inno_exclrw_os_waits"] = fields[7]
 
     return
@@ -457,6 +457,18 @@ StatusColumn("LWait", 0, column_flags_rate, field_handler_common, ["Table_locks_
 StatusColumn("LImt", 0, column_flags_rate, field_handler_common, ["Table_locks_immediate"])
 ])
 
+mysql_innodb_internal_lock_section = StatusSection("innodb_internal_lock", [
+StatusColumn("MSpin", 0, column_flags_rate, field_handler_common, ["inno_mutex_spin_waits"]),
+StatusColumn("MRound", 0, column_flags_rate, field_handler_common, ["inno_mutex_rounds"]),
+StatusColumn("MOWait", 0, column_flags_rate, field_handler_common, ["inno_mutex_os_waits"]),
+StatusColumn("SSpin", 0, column_flags_rate, field_handler_common, ["inno_shrdrw_spins"]),
+StatusColumn("SRound", 0, column_flags_rate, field_handler_common, ["inno_shrdrw_rounds"]),
+StatusColumn("SOWait", 0, column_flags_rate, field_handler_common, ["inno_shrdrw_os_waits"]),
+StatusColumn("ESpin", 0, column_flags_rate, field_handler_common, ["inno_exclrw_spins"]),
+StatusColumn("ERound", 0, column_flags_rate, field_handler_common, ["inno_exclrw_rounds"]),
+StatusColumn("EOWait", 0, column_flags_rate, field_handler_common, ["inno_exclrw_os_waits"])
+])
+
 mysql_sections = [
 mysql_commands_section,
 mysql_net_section,
@@ -467,7 +479,8 @@ mysql_innodb_buffer_pool_usage_section,
 mysql_innodb_rows_section,
 mysql_innodb_data_section,
 mysql_innodb_row_lock_section,
-mysql_table_lock_section
+mysql_table_lock_section,
+mysql_innodb_internal_lock_section
 ]
 mysql_sections_to_show_default = [
 time_section,
