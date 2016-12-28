@@ -447,6 +447,11 @@ StatusColumn("Read", 4, column_flags_rate|column_flags_bytes, field_handler_comm
 StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_written"])
 ])
 
+mysql_innodb_row_lock_section = StatusSection("row_lock", [
+StatusColumn("LWaits", 0, column_flags_rate, field_handler_common, ["Innodb_row_lock_waits"]),
+StatusColumn("LTime", 0, column_flags_rate, field_handler_common, ["Innodb_row_lock_time"])
+])
+
 mysql_sections = [
 mysql_commands_section,
 mysql_net_section,
@@ -455,7 +460,8 @@ mysql_innodb_redo_log_section,
 mysql_innodb_log_section,
 mysql_innodb_buffer_pool_usage_section,
 mysql_innodb_rows_section,
-mysql_innodb_data_section
+mysql_innodb_data_section,
+mysql_innodb_row_lock_section
 ]
 mysql_sections_to_show_default = [
 time_section,
