@@ -93,6 +93,8 @@ class StatusColumn:
             self.width = len(name)+2
         elif (blanks > 0):
             self.width = len(name) + blanks
+        if (self.width < 8):
+            self.width = 8
 
     def getName(self):
         return self.name
