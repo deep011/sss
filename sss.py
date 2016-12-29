@@ -167,7 +167,11 @@ def field_handler_common(column, status):
     if (column.getFlags()&column_flags_rate):
         rate = value_num - column.getValueOld()
         column.setValueOld(value_num)
-        value_str = str(rate)
+        if (interval > 1):
+            rate = float(rate)/interval
+            value_str = "%3.1f"%rate
+        else:
+            value_str = str(rate)
     else:
         if (column.getFlags()&column_flags_string == 0):
             value_str = str(value_num)
@@ -558,13 +562,14 @@ def usage():
     print '-d: removed sections for the showing, use comma to split'
     print '-o: output the status to this file'
     print '-D: separate output files by day, suffix of the file name is \'_yyyy-mm-dd\''
+    print '-i: interval time to show the status, unit is second'
 
 def version():
     return '0.1.0'
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:D', ['help', 'version'])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:Di:', ['help', 'version'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -614,6 +619,8 @@ if __name__ == "__main__":
             output_file_name = arg
         elif opt in ('-D'):
             output_file_by_day = 1
+        elif opt in ('-i'):
+            interval = int(arg)
         else:
             print 'Unhandled option'
             sys.exit(3)
