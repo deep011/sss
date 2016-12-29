@@ -50,7 +50,7 @@ StatusColumn("DPs", 0, column_flags_rate, field_handler_common,["Com_delete"]),
 StatusColumn("IPs", 0, column_flags_rate, field_handler_common,["Com_insert"]),
 StatusColumn("UPs", 0, column_flags_rate, field_handler_common,["Com_update"]),
 StatusColumn("DIUPs", 0, column_flags_rate, field_handler_common,["Com_delete","Com_insert","Com_update"])
-])
+], [get_mysql_status])
 ```
 
 If you want sss to support other service, please implement the Server class like the mysql.
