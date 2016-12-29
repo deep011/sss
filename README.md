@@ -1,6 +1,6 @@
 # sss
 
-**sss** is a convenient tool to show the service status(Now only support for mysql).
+**sss** (abbreviation "Show-Service-Status") is a convenient tool to Show the Service Status(Now only support for mysql).
 
 ## Usage
 
@@ -18,6 +18,9 @@
     -s: sections to show, use comma to split
     -a: addition sections to show, use comma to split
     -d: removed sections for the showing, use comma to split
+    -o: output the status to this file
+    -D: separate output files by day, suffix of the file name is '_yyyy-mm-dd'
+    -i: interval time to show the status, unit is second
     
 ## Run
     
