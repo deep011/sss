@@ -262,9 +262,28 @@ StatusColumn("idl", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_idl","o
 StatusColumn("iow", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_iow","os_cpu_total"])
 ],[get_os_cpu_status])
 
+def get_os_load_status(server, status):
+    file = open("/proc/loadavg", 'r')
+    line = file.readline()
+    file.close()
+
+    os_load_status = line.split()
+    status["os_load_one"] = os_load_status[0]
+    status["os_load_five"] = os_load_status[1]
+    status["os_load_fifteen"] = os_load_status[2]
+
+    return
+
+os_load_section = StatusSection("os_load", [
+StatusColumn("1m", 4, column_flags_string, field_handler_common, ["os_load_one"]),
+StatusColumn("5m", 4, column_flags_string, field_handler_common, ["os_load_five"]),
+StatusColumn("15m", 3, column_flags_string, field_handler_common, ["os_load_fifteen"])
+],[get_os_load_status])
+
 common_sections = [
 time_section,
-os_cpu_section
+os_cpu_section,
+os_load_section
 ]
 
 ####### Class Server #######
