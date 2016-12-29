@@ -14,6 +14,9 @@ type=type_mysql
 output_type = 0 #0 is print, 1 is file.
 output_file_name = ""
 output_file = None
+output_file_by_day = 0
+date_format = "%Y-%m-%d"
+current_day = str(time.strftime(date_format, time.localtime()))
 
 host="127.0.0.1"
 port=3306
@@ -62,6 +65,21 @@ def output(content):
         return
 
     return
+
+def separate_output_file_if_needed():
+    if (output_file_by_day == 1):
+        today = str(time.strftime(date_format, time.localtime()))
+        global current_day
+        global output_file
+        if current_day != today:
+            current_day = today
+            if (output_file.closed == False):
+                output_file.close()
+
+            output_file = open(output_file_name+'_'+current_day, 'a', 0)
+            return 1
+
+    return 0
 
 ####### Class StatusSection #######
 class StatusSection:
@@ -302,7 +320,8 @@ class Server:
         while (1):
             time.sleep(interval)
             self.status.clear()
-            if (counter % 10 == 0):
+
+            if (separate_output_file_if_needed() == 1 or counter % 10 == 0):
                 output(self.header_sections)
                 output(self.header_columns)
 
@@ -538,13 +557,14 @@ def usage():
     print '-a: addition sections to show, use comma to split'
     print '-d: removed sections for the showing, use comma to split'
     print '-o: output the status to this file'
+    print '-D: separate output files by day, suffix of the file name is \'_yyyy-mm-dd\''
 
 def version():
     return '0.1.0'
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:', ['help', 'version'])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:D', ['help', 'version'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -592,7 +612,8 @@ if __name__ == "__main__":
         elif opt in ('-o'):
             output_type = 1
             output_file_name = arg
-            output_file = open(output_file_name, 'a', 0)
+        elif opt in ('-D'):
+            output_file_by_day = 1
         else:
             print 'Unhandled option'
             sys.exit(3)
@@ -634,6 +655,9 @@ if __name__ == "__main__":
             print "Section '%s' is not supported for %s" % (section_name, server.getName())
             print server.getName() + " supported sections: " + server.getSupportedSectionsName()
             sys.exit(3)
+
+    if (output_type == 1):
+        output_file = open(output_file_name+'_'+current_day, 'a', 0)
 
     server.initialize(server)
     server.showStatus()
