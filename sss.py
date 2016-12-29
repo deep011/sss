@@ -123,12 +123,14 @@ class StatusColumn:
         self.fields = fields
         self.value_old = 0
         self.obj_old = None
-        if (blanks <= 2):  # Blanks is zero means the default blanks count between the columns, default is 2.
-            self.width = len(name)+2
-        elif (blanks > 0):
+        if (blanks > 0):   # Blanks is bigger than zero means we really want the blanks.
             self.width = len(name) + blanks
-        if (self.width < 8):
-            self.width = 8
+        elif (blanks == 0):   # Blanks is zero means the default blanks count between the columns, default is 2.
+            self.width = len(name) + 2
+            if (self.width < 8):
+                self.width = 8
+        else:
+            self.width = len(name) + 2
 
     def getName(self):
         return self.name
@@ -223,8 +225,46 @@ time_section = StatusSection("time", [
 StatusColumn("Time", 5, column_flags_string, field_handler_time, [])
 ],[])
 
+def get_os_cpu_status(server, status):
+    file = open("/proc/stat", 'r')
+    line = file.readline()
+    file.close()
+
+    # cpu   1-user  2-nice  3-system 4-idle   5-iowait  6-irq   7-softirq
+    # cpu   628808  1642    61861    24978051 22640     349     3086        0
+    os_cpu_status = line.split()
+    status["os_cpu_usr"] = int(os_cpu_status[1]) + int(os_cpu_status[2])
+    status["os_cpu_sys"] = int(os_cpu_status[3]) + int(os_cpu_status[6]) + int(os_cpu_status[7])
+    status["os_cpu_idl"] = int(os_cpu_status[4])
+    status["os_cpu_iow"] = int(os_cpu_status[5])
+    status["os_cpu_total"] = status["os_cpu_usr"] + status["os_cpu_sys"] + status["os_cpu_idl"] + status["os_cpu_iow"]
+
+    return
+
+def field_handler_os_cpu(column, status):
+    fields = column.getFields()
+    value = status[fields[0]]
+    total = status[fields[1]]
+    obj = column.getObjOld()
+    if (obj == None):
+        column.setObjOld([value,total])
+        return '0'
+
+    value_diff = value - obj[0]
+    total_diff = total - obj[1]
+    column.setObjOld([value, total])
+    return "%3.1f"%(float(value_diff)/float(total_diff) * 100)
+
+os_cpu_section = StatusSection("os_cpu", [
+StatusColumn("usr", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_usr","os_cpu_total"]),
+StatusColumn("sys", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_sys","os_cpu_total"]),
+StatusColumn("idl", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_idl","os_cpu_total"]),
+StatusColumn("iow", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_iow","os_cpu_total"])
+],[get_os_cpu_status])
+
 common_sections = [
-time_section
+time_section,
+os_cpu_section
 ]
 
 ####### Class Server #######
@@ -503,7 +543,7 @@ def get_mysql_status_for_server(server):
 
 mysql_commands_section = StatusSection("cmds", [
 StatusColumn("TPs", 0, column_flags_rate, field_handler_common, ["Com_commit", "Com_rollback"]),
-StatusColumn("QPs", 3, column_flags_rate, field_handler_common, ["Com_select"]),
+StatusColumn("QPs", 0, column_flags_rate, field_handler_common, ["Com_select"]),
 StatusColumn("DPs", 0, column_flags_rate, field_handler_common,["Com_delete"]),
 StatusColumn("IPs", 0, column_flags_rate, field_handler_common,["Com_insert"]),
 StatusColumn("UPs", 0, column_flags_rate, field_handler_common,["Com_update"]),
@@ -511,8 +551,8 @@ StatusColumn("DIUPs", 0, column_flags_rate, field_handler_common,["Com_delete","
 ], [get_mysql_status])
 
 mysql_net_section = StatusSection("net", [
-StatusColumn("NetIn", 3, column_flags_rate|column_flags_bytes, field_handler_common,["Bytes_received"]),
-StatusColumn("NetOut", 3, column_flags_rate|column_flags_bytes, field_handler_common, ["Bytes_sent"])
+StatusColumn("NetIn", 0, column_flags_rate|column_flags_bytes, field_handler_common,["Bytes_received"]),
+StatusColumn("NetOut", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Bytes_sent"])
 ], [get_mysql_status])
 
 mysql_threads_section = StatusSection("threads_conns", [
@@ -520,7 +560,7 @@ StatusColumn("Run", 0, column_flags_none, field_handler_common, ["Threads_runnin
 StatusColumn("Create", 0, column_flags_rate, field_handler_common, ["Threads_created"]),
 StatusColumn("Cache", 0, column_flags_none, field_handler_common, ["Threads_cached"]),
 StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["Threads_connected"]),
-StatusColumn("Try", 3, column_flags_rate, field_handler_common, ["Connections"]),
+StatusColumn("Try", 0, column_flags_rate, field_handler_common, ["Connections"]),
 StatusColumn("Abort", 0, column_flags_rate, field_handler_common, ["Aborted_connects"])
 ], [get_mysql_status])
 
@@ -548,13 +588,13 @@ mysql_innodb_rows_section = StatusSection("innodb_rows", [
 StatusColumn("Insert", 0, column_flags_rate, field_handler_common, ["Innodb_rows_inserted"]),
 StatusColumn("Update", 0, column_flags_rate, field_handler_common, ["Innodb_rows_updated"]),
 StatusColumn("Delete", 0, column_flags_rate, field_handler_common, ["Innodb_rows_deleted"]),
-StatusColumn("Read", 3, column_flags_rate, field_handler_common, ["Innodb_rows_read"])
+StatusColumn("Read", 0, column_flags_rate, field_handler_common, ["Innodb_rows_read"])
 ], [get_mysql_status])
 
 mysql_innodb_data_section = StatusSection("innodb_data", [
 StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_data_reads"]),
 StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_data_writes"]),
-StatusColumn("Read", 4, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_read"]),
+StatusColumn("Read", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_read"]),
 StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_written"])
 ], [get_mysql_status])
 
