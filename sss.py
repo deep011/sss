@@ -83,9 +83,10 @@ def separate_output_file_if_needed():
 
 ####### Class StatusSection #######
 class StatusSection:
-    def __init__(self, name, columns):
+    def __init__(self, name, columns, status_get_functions):
         self.name = name
         self.columns = columns
+        self.status_get_functions = status_get_functions
 
     def getName(self):
         return self.name
@@ -121,6 +122,7 @@ class StatusColumn:
         self.field_handler = field_handler
         self.fields = fields
         self.value_old = 0
+        self.obj_old = None
         if (blanks <= 2):  # Blanks is zero means the default blanks count between the columns, default is 2.
             self.width = len(name)+2
         elif (blanks > 0):
@@ -138,6 +140,8 @@ class StatusColumn:
         return self.fields
     def getValueOld(self):
         return self.value_old
+    def getObjOld(self):
+        return self.obj_old
 
     def getHeader(self):
         return column_format % (self.getWidth(), self.getName())
@@ -147,6 +151,8 @@ class StatusColumn:
 
     def setValueOld(self, value):
         self.value_old = value
+    def setObjOld(self, obj):
+        self.obj_old = obj
 
 def field_handler_common(column, status):
     if (column.getFlags()&column_flags_ratio):
@@ -192,13 +198,6 @@ def get_status_line(sections, status):
     return line
 
 ####### Common #######
-def field_handler_time(column, status):
-    return column_format % (9, time.strftime("%H:%M:%S", time.localtime()))
-
-time_section = StatusSection("time", [
-StatusColumn("Time", 5, column_flags_string, field_handler_time, [])
-])
-
 def get_sections_header(sections):
     header = ''
     for section in sections:
@@ -217,18 +216,25 @@ def get_columns_header(sections):
 
     return header
 
+def field_handler_time(column, status):
+    return column_format % (9, time.strftime("%H:%M:%S", time.localtime()))
+
+time_section = StatusSection("time", [
+StatusColumn("Time", 5, column_flags_string, field_handler_time, [])
+],[])
+
 common_sections = [
 time_section
 ]
 
 ####### Class Server #######
 class Server:
-    def __init__(self, name, type, initialize_func, clean_func, getStatus_func, sections):
+    def __init__(self, name, type, initialize_func, clean_func, sections):
         self.name = name
         self.type = type
         self.initialize = initialize_func   #initialize(server)
         self.clean = clean_func             #clean(server)
-        self.getStatus = getStatus_func     #getStatus(server)
+        self.status_get_funcs = []
         self.sections = sections
         self.sections_to_show = []
         self.header_sections = ""
@@ -261,8 +267,49 @@ class Server:
 
         return names
 
+    def isStatusGetFunctionAlreadyExist(self, function):
+        for func in self.status_get_funcs:
+            if (func[0] == function):
+                return True
+
+        return False
+
+    def getStatusGetFunction(self, function):
+        for func in self.status_get_funcs:
+            if (func[0] == function):
+                return func
+
+        return None
+
+    def addSectionStatusGetFunctions(self, section):
+        added_count = 0
+        for function in section.status_get_functions:
+            func = self.getStatusGetFunction(function)
+            if (func == None):
+                self.status_get_funcs.append([function, 1])
+                added_count += 1
+            else:
+                func[1] += 1
+
+        return added_count
+
+    def removeSectionStatusGetFunctions(self, section):
+        removed_count = 0
+        for function in section.status_get_functions:
+            func = self.getStatusGetFunction(function)
+            if (func != None):
+                func[1] -= 1
+                if (func[1] <= 0):
+                    self.status_get_funcs.remove(func)
+                    removed_count += 1
+
+        return removed_count
+
     def setDefaultSectionsToShow(self, sections):
         self.sections_to_show = sections
+        for section in sections:
+            self.addSectionStatusGetFunctions(section)
+
         return
 
     def isSectionSupported(self, section_name):
@@ -298,6 +345,7 @@ class Server:
             return -1
 
         self.sections_to_show.append(section)
+        self.addSectionStatusGetFunctions(section)
         return 1
 
     def removeSectionFromShow(self, section_name):
@@ -308,16 +356,23 @@ class Server:
         for section in self.sections_to_show:
             if (section.getName() == section_name):
                 self.sections_to_show.remove(section)
+                self.removeSectionStatusGetFunctions(section)
                 return 1
 
         return 0
+
+    def getStatus(self):
+        for func in self.status_get_funcs:
+            func[0](self,self.status)
+
+        return
 
     def showStatus(self):
         self.header_sections = get_sections_header(self.sections_to_show)
         self.header_columns = get_columns_header(self.sections_to_show)
 
         # Init the first status
-        self.getStatus(self)
+        self.getStatus()
         get_status_line(self.sections_to_show, self.status)
 
         counter = 0
@@ -329,7 +384,7 @@ class Server:
                 output(self.header_sections)
                 output(self.header_columns)
 
-            self.getStatus(self)
+            self.getStatus()
             output(get_status_line(self.sections_to_show, self.status))
 
             counter += 1
@@ -367,10 +422,10 @@ def get_mysql_pid(cursor):
     fd.close()
     return int(pid)
 
-def get_mysql_status(cursor, status):
+def get_mysql_status(server, status):
     query= "show global status"
-    cursor.execute(query)
-    for (variable_name, value) in cursor:
+    server.cursor.execute(query)
+    for (variable_name, value) in server.cursor:
         status[variable_name] = value
     return
 
@@ -423,9 +478,9 @@ def parse_innodb_status(innodb_status, status):
 
 def get_innodb_status(cursor, status):
     query= "show engine innodb status"
-    cursor.execute(query)
+    server.cursor.execute(query)
 
-    for (type, name, innodb_status) in cursor:
+    for (type, name, innodb_status) in server.cursor:
         parse_innodb_status(innodb_status, status)
         break
 
@@ -453,12 +508,12 @@ StatusColumn("DPs", 0, column_flags_rate, field_handler_common,["Com_delete"]),
 StatusColumn("IPs", 0, column_flags_rate, field_handler_common,["Com_insert"]),
 StatusColumn("UPs", 0, column_flags_rate, field_handler_common,["Com_update"]),
 StatusColumn("DIUPs", 0, column_flags_rate, field_handler_common,["Com_delete","Com_insert","Com_update"])
-])
+], [get_mysql_status])
 
 mysql_net_section = StatusSection("net", [
 StatusColumn("NetIn", 3, column_flags_rate|column_flags_bytes, field_handler_common,["Bytes_received"]),
 StatusColumn("NetOut", 3, column_flags_rate|column_flags_bytes, field_handler_common, ["Bytes_sent"])
-])
+], [get_mysql_status])
 
 mysql_threads_section = StatusSection("threads_conns", [
 StatusColumn("Run", 0, column_flags_none, field_handler_common, ["Threads_running"]),
@@ -467,19 +522,19 @@ StatusColumn("Cache", 0, column_flags_none, field_handler_common, ["Threads_cach
 StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["Threads_connected"]),
 StatusColumn("Try", 3, column_flags_rate, field_handler_common, ["Connections"]),
 StatusColumn("Abort", 0, column_flags_rate, field_handler_common, ["Aborted_connects"])
-])
+], [get_mysql_status])
 
 mysql_innodb_redo_log_section = StatusSection("innodb_redo_log", [
 StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_bytes_written"]),
 StatusColumn("Flushed", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_bytes_flushed"]),
 StatusColumn("Checked", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_last_checkpoint"])
-])
+], [get_innodb_status])
 
 mysql_innodb_log_section = StatusSection("innodb_log", [
 StatusColumn("HisList", 0, column_flags_none, field_handler_common, ["inno_history_list"]),
 StatusColumn("Fsyncs", 0, column_flags_rate, field_handler_common, ["Innodb_os_log_fsyncs"]),
 StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_os_log_written"])
-])
+], [get_mysql_status, get_innodb_status])
 
 mysql_innodb_buffer_pool_usage_section = StatusSection("innodb_bp_usage", [
 StatusColumn("DataPct", 0, column_flags_ratio, field_handler_common, ["Innodb_buffer_pool_pages_data","Innodb_buffer_pool_pages_total"]),
@@ -487,31 +542,31 @@ StatusColumn("Dirty", 0, column_flags_none, field_handler_common, ["Innodb_buffe
 StatusColumn("MReads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_reads"]),
 StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_read_requests"]),
 StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_write_requests"])
-])
+], [get_mysql_status])
 
 mysql_innodb_rows_section = StatusSection("innodb_rows", [
 StatusColumn("Insert", 0, column_flags_rate, field_handler_common, ["Innodb_rows_inserted"]),
 StatusColumn("Update", 0, column_flags_rate, field_handler_common, ["Innodb_rows_updated"]),
 StatusColumn("Delete", 0, column_flags_rate, field_handler_common, ["Innodb_rows_deleted"]),
 StatusColumn("Read", 3, column_flags_rate, field_handler_common, ["Innodb_rows_read"])
-])
+], [get_mysql_status])
 
 mysql_innodb_data_section = StatusSection("innodb_data", [
 StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_data_reads"]),
 StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_data_writes"]),
 StatusColumn("Read", 4, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_read"]),
 StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_written"])
-])
+], [get_mysql_status])
 
 mysql_innodb_row_lock_section = StatusSection("row_lock", [
 StatusColumn("LWaits", 0, column_flags_rate, field_handler_common, ["Innodb_row_lock_waits"]),
 StatusColumn("LTime", 0, column_flags_rate, field_handler_common, ["Innodb_row_lock_time"])
-])
+], [get_mysql_status])
 
 mysql_table_lock_section = StatusSection("table_lock", [
 StatusColumn("LWait", 0, column_flags_rate, field_handler_common, ["Table_locks_waited"]),
 StatusColumn("LImt", 0, column_flags_rate, field_handler_common, ["Table_locks_immediate"])
-])
+], [get_mysql_status])
 
 mysql_innodb_internal_lock_section = StatusSection("innodb_internal_lock", [
 StatusColumn("MSpin", 0, column_flags_rate, field_handler_common, ["inno_mutex_spin_waits"]),
@@ -523,7 +578,7 @@ StatusColumn("SOWait", 0, column_flags_rate, field_handler_common, ["inno_shrdrw
 StatusColumn("ESpin", 0, column_flags_rate, field_handler_common, ["inno_exclrw_spins"]),
 StatusColumn("ERound", 0, column_flags_rate, field_handler_common, ["inno_exclrw_rounds"]),
 StatusColumn("EOWait", 0, column_flags_rate, field_handler_common, ["inno_exclrw_os_waits"])
-])
+], [get_innodb_status])
 
 mysql_sections = [
 mysql_commands_section,
@@ -630,7 +685,6 @@ if __name__ == "__main__":
         server = Server("Mysql", type,
                         mysql_initialize_for_server,
                         mysql_clean_for_server,
-                        get_mysql_status_for_server,
                         mysql_sections)
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
