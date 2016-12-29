@@ -280,10 +280,37 @@ StatusColumn("5m", 4, column_flags_string, field_handler_common, ["os_load_five"
 StatusColumn("15m", 3, column_flags_string, field_handler_common, ["os_load_fifteen"])
 ],[get_os_load_status])
 
+def get_os_swap_status(server, status):
+    count = 0
+    file = open("/proc/vmstat", 'r')
+    line = file.readline()
+    while line:
+        if (line.startswith("pswpin")):
+            swaps = line.split()
+            status["os_swap_pswpin"] = swaps[1]
+            count += 1
+        elif (line.startswith("pswpout")):
+            swaps = line.split()
+            status["os_swap_pswpout"] = swaps[1]
+            count += 1
+
+        line = file.readline()
+        if (count >= 2):
+            break
+
+    file.close()
+    return
+
+os_swap_section = StatusSection("os_swap", [
+StatusColumn("si", 4, column_flags_rate, field_handler_common, ["os_swap_pswpin"]),
+StatusColumn("so", 4, column_flags_rate, field_handler_common, ["os_swap_pswpout"])
+],[get_os_swap_status])
+
 common_sections = [
 time_section,
 os_cpu_section,
-os_load_section
+os_load_section,
+os_swap_section
 ]
 
 ####### Class Server #######
