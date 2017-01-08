@@ -306,11 +306,42 @@ StatusColumn("si", 4, column_flags_rate, field_handler_common, ["os_swap_pswpin"
 StatusColumn("so", 4, column_flags_rate, field_handler_common, ["os_swap_pswpout"])
 ],[get_os_swap_status])
 
+net_face_name="lo"
+def get_os_net_status(server, status):
+    file = open("/proc/net/dev", 'r')
+    line = file.readline().lstrip()
+    
+    while line:
+        if (line.startswith(net_face_name+':')):
+            fields = line.split()
+            status["os_net_bytes_in"] = fields[1]
+            status["os_net_bytes_out"] = fields[9]
+            status["os_net_packages_in"] = fields[2]
+            status["os_net_packages_out"] = fields[10]
+            break
+        
+        line = file.readline().lstrip()
+
+    file.close()
+    return
+
+os_net_bytes_section = StatusSection("os_net_bytes", [
+StatusColumn("in", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_in"]),
+StatusColumn("out", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_out"])
+],[get_os_net_status])
+
+os_net_packages_section = StatusSection("os_net_packages", [
+StatusColumn("in", 0, column_flags_rate, field_handler_common, ["os_net_packages_in"]),
+StatusColumn("out", 0, column_flags_rate, field_handler_common, ["os_net_packages_out"])
+],[get_os_net_status])
+
 common_sections = [
 time_section,
 os_cpu_section,
 os_load_section,
-os_swap_section
+os_swap_section,
+os_net_bytes_section,
+os_net_packages_section
 ]
 
 ####### Class Server #######
@@ -704,13 +735,14 @@ def usage():
     print '-o: output the status to this file'
     print '-D: separate output files by day, suffix of the file name is \'_yyyy-mm-dd\''
     print '-i: interval time to show the status, unit is second'
+    print '--net-face: set the net device face name for os_net_* sections, default is \'lo\''
 
 def version():
     return '0.1.0'
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:Di:', ['help', 'version'])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:Di:', ['help', 'version', 'net-face='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -762,6 +794,8 @@ if __name__ == "__main__":
             output_file_by_day = 1
         elif opt in ('-i'):
             interval = int(arg)
+        elif opt in ('--net-face'):
+            net_face_name = arg
         else:
             print 'Unhandled option'
             sys.exit(3)
