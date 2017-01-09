@@ -1,15 +1,17 @@
 #!/usr/bin/python
 
 import time
+import datetime
 import getopt
 import sys
+import types
 
 import mysql.connector
 
 type_mysql = "mysql"
 support_types=[type_mysql]
 
-type=type_mysql
+service_type=type_mysql
 
 output_type = 0 #0 is print, 1 is file.
 output_file_name = ""
@@ -46,7 +48,10 @@ def byte2readable(bytes):
 def num2readable(number):
     number_float = float(number)
     if number_float > -1000.0 and number_float < 1000.0:
-        return str(number)
+        if (type(number) is types.FloatType):
+            return "%3.1f" % (number)
+        else:
+            return str(number)
     else:
         number_float /= 1000.0
     for count in ['k', 'm', 'g']:
@@ -326,14 +331,109 @@ def get_os_net_status(server, status):
     return
 
 os_net_bytes_section = StatusSection("os_net_bytes", [
-StatusColumn("in", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_in"]),
-StatusColumn("out", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_out"])
+StatusColumn("In", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_in"]),
+StatusColumn("Out", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_out"])
 ],[get_os_net_status])
 
 os_net_packages_section = StatusSection("os_net_packages", [
-StatusColumn("in", 0, column_flags_rate, field_handler_common, ["os_net_packages_in"]),
-StatusColumn("out", 0, column_flags_rate, field_handler_common, ["os_net_packages_out"])
+StatusColumn("In", 0, column_flags_rate, field_handler_common, ["os_net_packages_in"]),
+StatusColumn("Out", 0, column_flags_rate, field_handler_common, ["os_net_packages_out"])
 ],[get_os_net_status])
+
+disk_name = "vda"
+os_disk_stats_first_time=1
+def get_disk_status(server, status):
+    file = open("/proc/diskstats", 'r')
+    os_disk_stats_get_time = datetime.datetime.now().microsecond
+    line = file.readline()
+
+    while line:
+        fields = line.split()
+        if (fields[2] == disk_name):
+            global os_disk_stats_first_time
+            if (os_disk_stats_first_time == 1):
+                os_disk_stats_first_time = 0
+                server.os_disk_stats_fields_old = fields
+                server.os_disk_stats_get_time_old = os_disk_stats_get_time
+
+                status["os_disk_reads"] = "0"
+                status["os_disk_writes"] = "0"
+                status["os_disk_read_bytes"] = "0"
+                status["os_disk_write_bytes"] = "0"
+                status["os_disk_queue"] = "0"
+                status["os_disk_wait"] = "0"
+                status["os_disk_service_time"] = "0"
+                status["os_disk_busy"] = "0"
+                break
+
+            fields_old =  server.os_disk_stats_fields_old
+
+            rd_ios = long(fields[3]) - long(fields_old[3])   #/* Read I/O operations */
+            rd_merges = long(fields[4]) - long(fields_old[4])   #/* Reads merged */
+            rd_sectors = long(fields[5]) - long(fields_old[5])  #/* Sectors read */
+            rd_ticks = long(fields[6]) - long(fields_old[6])    #/* Time in queue + service for read */
+            wr_ios = long(fields[7]) - long(fields_old[7])   # /* Write I/O operations */
+            wr_merges = long(fields[8]) - long(fields_old[8])  # /* Writes merged */
+            wr_sectors = long(fields[9]) - long(fields_old[9]) # /* Sectors written */
+            wr_ticks = long(fields[10]) - long(fields_old[10])  # /* Time in queue + service for write */
+            ticks = long(fields[12]) - long(fields_old[12])         #/* Time of requests in queue */
+            aveq = long(fields[13]) - long(fields_old[13])    #/* Average queue length */
+
+            deltams = os_disk_stats_get_time - server.os_disk_stats_get_time_old
+
+            server.os_disk_stats_fields_old = fields
+            server.os_disk_stats_get_time_old = os_disk_stats_get_time
+
+            n_ios = long(rd_ios) + long(wr_ios) #/* Number of requests */
+            n_ticks = long(rd_ticks) + long(wr_ticks) #/* Total service time */
+            n_kbytes = (float(rd_sectors) + float(wr_sectors))/2.0   #/* Total kbytes transferred */
+            queue = float(aveq)/deltams #/* Average queue */
+            if (n_ios > 0):
+                size = float(n_kbytes)/n_ios   #/* Average request size */
+                wait = float(n_ticks)/n_ios #/* Average wait */
+                svc_t = float(ticks)/n_ios    #/* Average disk service time */
+            else:
+                size = 0
+                wait = 0
+                svc_t = 0
+
+            busy = 100.0 * float(ticks)/float(deltams)
+            if (busy > 100):
+                busy = 100
+
+            rkbs = 1000.0*float(rd_sectors)/deltams/2
+            wkbs = 1000.0*float(wr_sectors)/deltams/2
+
+            # r/s  w/s
+            rd_ios_s = 1000.0 * float(rd_ios)/deltams
+            wr_ios_s = 1000.0 * float(wr_ios)/deltams
+
+            status["os_disk_reads"] = num2readable(rd_ios_s)
+            status["os_disk_writes"] = num2readable(wr_ios_s)
+            status["os_disk_read_bytes"] = byte2readable(rkbs*1024.0)
+            status["os_disk_write_bytes"] = byte2readable(wkbs*1024.0)
+            status["os_disk_queue"] = num2readable(queue)
+            status["os_disk_wait"] = num2readable(wait)
+            status["os_disk_service_time"] = num2readable(svc_t)
+            status["os_disk_busy"] = num2readable(busy)
+            break
+
+
+        line = file.readline()
+
+    file.close()
+    return
+
+os_disk_section = StatusSection("os_disk", [
+StatusColumn("Reads", 0, column_flags_string, field_handler_common, ["os_disk_reads"]),
+StatusColumn("Writes", 0, column_flags_string, field_handler_common, ["os_disk_writes"]),
+StatusColumn("RBytes", 0, column_flags_string, field_handler_common, ["os_disk_read_bytes"]),
+StatusColumn("WBytes", 0, column_flags_string, field_handler_common, ["os_disk_write_bytes"]),
+StatusColumn("Queue", 1, column_flags_string, field_handler_common, ["os_disk_queue"]),
+StatusColumn("Wait", 1, column_flags_string, field_handler_common, ["os_disk_wait"]),
+StatusColumn("STime", 1, column_flags_string, field_handler_common, ["os_disk_service_time"]),
+StatusColumn("%util", 1, column_flags_string, field_handler_common, ["os_disk_busy"])
+],[get_disk_status])
 
 common_sections = [
 time_section,
@@ -341,7 +441,8 @@ os_cpu_section,
 os_load_section,
 os_swap_section,
 os_net_bytes_section,
-os_net_packages_section
+os_net_packages_section,
+os_disk_section
 ]
 
 ####### Class Server #######
@@ -736,13 +837,14 @@ def usage():
     print '-D: separate output files by day, suffix of the file name is \'_yyyy-mm-dd\''
     print '-i: interval time to show the status, unit is second'
     print '--net-face: set the net device face name for os_net_* sections, default is \'lo\''
+    print '--disk-name: set the disk device name for os_disk sections, default is \'vda\''
 
 def version():
     return '0.1.0'
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:Di:', ['help', 'version', 'net-face='])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:Di:', ['help', 'version', 'net-face=', 'disk-name='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -768,10 +870,10 @@ if __name__ == "__main__":
         elif opt in ('-p'):
             password = arg
         elif opt in ('-T'):
-            type = arg
+            service_type = arg
             find = 0
             for elem in support_types:
-                if (type == elem):
+                if (service_type == elem):
                     find = 1
                     break
 
@@ -796,13 +898,15 @@ if __name__ == "__main__":
             interval = int(arg)
         elif opt in ('--net-face'):
             net_face_name = arg
+        elif opt in ('--disk-name'):
+            disk_name = arg
         else:
             print 'Unhandled option'
             sys.exit(3)
 
     server = None
-    if (type == type_mysql):
-        server = Server("Mysql", type,
+    if (service_type == type_mysql):
+        server = Server("Mysql", service_type,
                         mysql_initialize_for_server,
                         mysql_clean_for_server,
                         mysql_sections)
