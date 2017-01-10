@@ -445,6 +445,32 @@ StatusColumn("STime", 1, column_flags_string, field_handler_common, ["os_disk_se
 StatusColumn("%util", 1, column_flags_string, field_handler_common, ["os_disk_busy"])
 ],[get_disk_status])
 
+proc_pid = 0
+proc_pid_is_set = 0
+def get_proc_cpu_status(server, status):
+    global proc_pid_is_set
+    global proc_pid
+    if (proc_pid_is_set == 0):
+        proc_pid_is_set = 1
+        proc_pid = server.getPidNum(server)
+
+    file = open("/proc/"+str(proc_pid)+"/stat", 'r')
+    line = file.readline()
+    file.close()
+
+    fields = line.split()
+    utime = long(fields[13])
+    stime = long(fields[14])
+    cutime = long(fields[15])
+    cstime = long(fields[16])
+
+    status["proc_cpu"] = utime + stime
+    return
+
+proc_cpu_section = StatusSection("pcpu", [
+    StatusColumn("%cpu", 1, column_flags_rate, field_handler_common, ["proc_cpu"])
+], [get_proc_cpu_status])
+
 common_sections = [
 time_section,
 os_cpu_section,
@@ -452,16 +478,18 @@ os_load_section,
 os_swap_section,
 os_net_bytes_section,
 os_net_packages_section,
-os_disk_section
+os_disk_section,
+proc_cpu_section
 ]
 
 ####### Class Server #######
 class Server:
-    def __init__(self, name, type, initialize_func, clean_func, sections):
+    def __init__(self, name, type, initialize_func, clean_func, get_pidnum_func, sections):
         self.name = name
         self.type = type
         self.initialize = initialize_func   #initialize(server)
         self.clean = clean_func             #clean(server)
+        self.getPidNum = get_pidnum_func    #getPidNum(server)
         self.status_get_funcs = []
         self.sections = sections
         self.sections_to_show = []
@@ -639,17 +667,6 @@ def put_mysql_handler(handler):
     handler.close()
     return
 
-def get_mysql_pid(cursor):
-    query = "show global variables like 'pid_file'"
-    cursor.execute(query)
-    for (variable_name, value) in cursor:
-        pid_file = value
-        break
-    fd = open(pid_file, "r")
-    pid = fd.read(20)
-    fd.close()
-    return int(pid)
-
 def get_mysql_status(server, status):
     query= "show global status"
     server.cursor.execute(query)
@@ -723,6 +740,18 @@ def mysql_clean_for_server(server):
     put_mysql_handler(server.cursor)
     mysql_connection_destroy(server.conn)
     return
+
+def mysql_get_pidnum_for_server(server):
+    query = "show global variables like 'pid_file'"
+    server.cursor.execute(query)
+    for (variable_name, value) in server.cursor:
+        pid_file = value
+        break
+
+    fd = open(pid_file, "r")
+    pid = fd.read(20)
+    fd.close()
+    return int(pid)
 
 def get_mysql_status_for_server(server):
     get_mysql_status(server.cursor, server.status)
@@ -848,13 +877,14 @@ def usage():
     print '-i: interval time to show the status, unit is second'
     print '--net-face: set the net device face name for os_net_* sections, default is \'lo\''
     print '--disk-name: set the disk device name for os_disk sections, default is \'vda\''
+    print '--proc-pid: set the process pid number for proc_cpu sections, default is 0'
 
 def version():
     return '0.1.0'
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:Di:', ['help', 'version', 'net-face=', 'disk-name='])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvH:P:u:p:T:s:a:d:o:Di:', ['help', 'version', 'net-face=', 'disk-name=', 'proc-pid='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -910,6 +940,9 @@ if __name__ == "__main__":
             net_face_name = arg
         elif opt in ('--disk-name'):
             disk_name = arg
+        elif opt in ('--proc-pid'):
+            proc_pid = int(arg)
+            proc_pid_is_set = 1
         else:
             print 'Unhandled option'
             sys.exit(3)
@@ -919,6 +952,7 @@ if __name__ == "__main__":
         server = Server("Mysql", service_type,
                         mysql_initialize_for_server,
                         mysql_clean_for_server,
+                        mysql_get_pidnum_for_server,
                         mysql_sections)
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
