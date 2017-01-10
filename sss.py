@@ -4,7 +4,6 @@ import time
 import datetime
 import getopt
 import sys
-import types
 
 import mysql.connector
 
@@ -34,7 +33,10 @@ column_format = '%*s'
 def byte2readable(bytes):
     bytes_float = float(bytes)
     if bytes_float > -1024.0 and bytes_float < 1024.0:
-        return str(bytes)
+        if (str(bytes).find(".") >= 0):
+            return "%3.1f"%bytes_float
+        else:
+            return str(bytes)
     else:
         bytes_float /= 1024.0
 
@@ -43,23 +45,30 @@ def byte2readable(bytes):
             return "%3.1f%s" % (bytes_float, count)
 
         bytes_float /= 1024.0
+
     return "%3.1f%s" % (bytes_float, 'T')
 
 def num2readable(number):
     number_float = float(number)
     if number_float > -1000.0 and number_float < 1000.0:
-        if (type(number) is types.FloatType):
-            return "%3.1f" % (number)
+        if (str(number).find(".") >= 0):
+            return "%3.1f"%number_float
         else:
             return str(number)
     else:
         number_float /= 1000.0
+
     for count in ['k', 'm', 'g']:
         if number_float > -1000.0 and number_float < 1000.0:
             return "%3.1f%s" % (number_float, count)
 
         number_float /= 1000.0
+
     return "%3.1f%s" % (number_float, 't')
+
+def microsecond_differ_by_datetime(datetime_new, datetime_old):
+    datetime_differ = datetime_new - datetime_old
+    return datetime_differ.days*24*3600*1000000 + datetime_differ.seconds*1000000 + datetime_differ.microseconds
 
 def output(content):
     if (output_type == 0):
@@ -344,7 +353,7 @@ disk_name = "vda"
 os_disk_stats_first_time=1
 def get_disk_status(server, status):
     file = open("/proc/diskstats", 'r')
-    os_disk_stats_get_time = datetime.datetime.now().microsecond
+    os_disk_stats_get_time = datetime.datetime.utcnow()
     line = file.readline()
 
     while line:
@@ -379,7 +388,8 @@ def get_disk_status(server, status):
             ticks = long(fields[12]) - long(fields_old[12])         #/* Time of requests in queue */
             aveq = long(fields[13]) - long(fields_old[13])    #/* Average queue length */
 
-            deltams = os_disk_stats_get_time - server.os_disk_stats_get_time_old
+            deltams = microsecond_differ_by_datetime(os_disk_stats_get_time, server.os_disk_stats_get_time_old)
+            deltams = float(deltams)/1000
 
             server.os_disk_stats_fields_old = fields
             server.os_disk_stats_get_time_old = os_disk_stats_get_time
@@ -408,14 +418,14 @@ def get_disk_status(server, status):
             rd_ios_s = 1000.0 * float(rd_ios)/deltams
             wr_ios_s = 1000.0 * float(wr_ios)/deltams
 
-            status["os_disk_reads"] = num2readable(rd_ios_s)
-            status["os_disk_writes"] = num2readable(wr_ios_s)
-            status["os_disk_read_bytes"] = byte2readable(rkbs*1024.0)
-            status["os_disk_write_bytes"] = byte2readable(wkbs*1024.0)
-            status["os_disk_queue"] = num2readable(queue)
-            status["os_disk_wait"] = num2readable(wait)
-            status["os_disk_service_time"] = num2readable(svc_t)
-            status["os_disk_busy"] = num2readable(busy)
+            status["os_disk_reads"] = num2readable(rd_ios_s if rd_ios_s > 0 else 0)
+            status["os_disk_writes"] = num2readable(wr_ios_s if wr_ios_s > 0 else 0)
+            status["os_disk_read_bytes"] = byte2readable(rkbs*1024.0 if rkbs > 0 else 0)
+            status["os_disk_write_bytes"] = byte2readable(wkbs*1024.0 if wkbs > 0 else 0)
+            status["os_disk_queue"] = num2readable(queue if queue > 0 else 0)
+            status["os_disk_wait"] = num2readable(wait if wait > 0 else 0)
+            status["os_disk_service_time"] = num2readable(svc_t if svc_t > 0 else 0)
+            status["os_disk_busy"] = num2readable(busy if busy > 0 else 0)
             break
 
 
