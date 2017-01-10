@@ -467,9 +467,43 @@ def get_proc_cpu_status(server, status):
     status["proc_cpu"] = utime + stime
     return
 
-proc_cpu_section = StatusSection("pcpu", [
-    StatusColumn("%cpu", 1, column_flags_rate, field_handler_common, ["proc_cpu"])
+proc_cpu_section = StatusSection("proc_cpu", [
+StatusColumn("%Cpu", 0, column_flags_rate, field_handler_common, ["proc_cpu"])
 ], [get_proc_cpu_status])
+
+def get_proc_mem_status(server, status):
+    global proc_pid_is_set
+    global proc_pid
+    if (proc_pid_is_set == 0):
+        proc_pid_is_set = 1
+        proc_pid = server.getPidNum(server)
+
+    file = open("/proc/"+str(proc_pid)+"/status", 'r')
+    line = file.readline()
+
+    count = 0
+    while line:
+        if (line.startswith("VmRSS")):
+            fields = line.split()
+            status["proc_mem_res"] = long(fields[1])*1024
+            count += 1
+        elif (line.startswith("VmSize")):
+            fields = line.split()
+            status["proc_mem_virt"] = long(fields[1])*1024
+            count += 1
+
+        if (count >= 2):
+            break
+
+        line = file.readline()
+
+    file.close()
+    return
+
+proc_mem_section = StatusSection("proc_mem", [
+StatusColumn("Res", 0, column_flags_bytes, field_handler_common, ["proc_mem_res"]),
+StatusColumn("Virt", 0, column_flags_bytes, field_handler_common, ["proc_mem_virt"])
+], [get_proc_mem_status])
 
 common_sections = [
 time_section,
@@ -479,7 +513,8 @@ os_swap_section,
 os_net_bytes_section,
 os_net_packages_section,
 os_disk_section,
-proc_cpu_section
+proc_cpu_section,
+proc_mem_section
 ]
 
 ####### Class Server #######
@@ -877,7 +912,7 @@ def usage():
     print '-i: interval time to show the status, unit is second'
     print '--net-face: set the net device face name for os_net_* sections, default is \'lo\''
     print '--disk-name: set the disk device name for os_disk sections, default is \'vda\''
-    print '--proc-pid: set the process pid number for proc_cpu sections, default is 0'
+    print '--proc-pid: set the process pid number for proc_* sections, default is 0'
 
 def version():
     return '0.1.0'
