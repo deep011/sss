@@ -5,12 +5,11 @@ import datetime
 import getopt
 import sys
 
-import mysql.connector
-
+type_os = "os"
 type_mysql = "mysql"
-support_types=[type_mysql]
+support_types=[type_os,type_mysql]
 
-service_type=type_mysql
+service_type=type_os
 
 output_type = 0 #0 is print, 1 is file.
 output_file_name = ""
@@ -214,6 +213,17 @@ def get_status_line(sections, status):
     return line
 
 ####### Common #######
+def getSupportedServiceTypesName():
+    names = ''
+    count = len(support_types)
+    for type in support_types:
+        names += type
+        count -= 1
+        if (count >= 1):
+            names += ","
+
+    return names
+
 def get_sections_header(sections):
     header = ''
     for section in sections:
@@ -517,6 +527,14 @@ proc_cpu_section,
 proc_mem_section
 ]
 
+common_sections_to_show_default = [
+time_section,
+os_cpu_section,
+os_disk_section,
+os_net_bytes_section,
+os_swap_section
+]
+
 ####### Class Server #######
 class Server:
     def __init__(self, name, type, initialize_func, clean_func, get_pidnum_func, sections):
@@ -534,6 +552,9 @@ class Server:
 
     def getName(self):
         return self.name
+
+    def getType(self):
+        return self.type
 
     def getSupportedSectionsName(self):
         names = ""
@@ -619,6 +640,9 @@ class Server:
             if (section_name == section.getName()):
                 return section
 
+        if (self.sections == None):
+            return None
+
         for section in self.sections:
             if (section_name == section.getName()):
                 return section
@@ -684,6 +708,7 @@ class Server:
 
 ####### Mysql Implement #######
 def mysql_connection_create():
+    import mysql.connector
     mysql_conn = mysql.connector.connect(
         user=user,
         password=password,
@@ -903,7 +928,7 @@ def usage():
     print '-P: target port'
     print '-u: target service user'
     print '-p: target user password'
-    print '-T: target service type, default is mysql'
+    print '-T: target service type, default is os'
     print '-s: sections to show, use comma to split'
     print '-a: addition sections to show, use comma to split'
     print '-d: removed sections for the showing, use comma to split'
@@ -953,7 +978,8 @@ if __name__ == "__main__":
                     break
 
             if (find == 0):
-                print "Unsupport type"
+                print service_type + " is not support type"
+                print "Support types: " + getSupportedServiceTypesName()
                 sys.exit(3)
         elif opt in ('-s'):
             if (arg == 'all'):
@@ -983,7 +1009,13 @@ if __name__ == "__main__":
             sys.exit(3)
 
     server = None
-    if (service_type == type_mysql):
+    if (service_type == type_os):
+        server = Server("OS", service_type, None, None, None, [])
+        if all_section == 1:
+            server.setDefaultSectionsToShow(common_sections)
+        else:
+            server.setDefaultSectionsToShow(common_sections_to_show_default)
+    elif (service_type == type_mysql):
         server = Server("Mysql", service_type,
                         mysql_initialize_for_server,
                         mysql_clean_for_server,
@@ -1002,30 +1034,36 @@ if __name__ == "__main__":
 
         ret = server.addSectionToShow(section_name)
         if (ret < 0):
-            print "Section '%s' is not supported for %s" % (section_name, server.getName())
-            print server.getName() + " supported sections: " + server.getSupportedSectionsName()
+            print "Section '%s' is not supported for %s" % (section_name, server.getType())
+            print server.getType() + " supported sections: " + server.getSupportedSectionsName()
             sys.exit(3)
 
     for section_name in sections_name_addition:
         ret = server.addSectionToShow(section_name)
         if (ret < 0):
-            print "Section '%s' is not supported for %s" % (section_name, server.getName())
-            print server.getName() + " supported sections: " + server.getSupportedSectionsName()
+            print "Section '%s' is not supported for %s" % (section_name, server.getType())
+            print server.getType() + " supported sections: " + server.getSupportedSectionsName()
             sys.exit(3)
 
     for section_name in sections_name_removed:
         ret = server.removeSectionFromShow(section_name)
         if (ret < 0):
-            print "Section '%s' is not supported for %s" % (section_name, server.getName())
-            print server.getName() + " supported sections: " + server.getSupportedSectionsName()
+            print "Section '%s' is not supported for %s" % (section_name, server.getType())
+            print server.getType() + " supported sections: " + server.getSupportedSectionsName()
             sys.exit(3)
 
     if (output_type == 1):
         output_file = open(output_file_name+'_'+current_day, 'a', 0)
 
-    server.initialize(server)
+    # Init the server if needed.
+    if (server.initialize != None):
+        server.initialize(server)
+
     server.showStatus()
-    server.clean(server)
+
+    # Clean the server if needed.
+    if (server.clean != None):
+        server.clean(server)
 
     if (output_type == 1 and output_file.closed == False):
         output_file.close()
