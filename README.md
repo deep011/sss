@@ -67,7 +67,7 @@ Support os status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes','
 Support mysql status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes','os_net_packages','os_disk','proc_cpu','proc_mem','cmds','net','threads_conns','innodb_redo_log','innodb_log','innodb_bp_usage','innodb_rows','innodb_data','row_lock','table_lock','innodb_internal_lock'
 
 
-You can use -I option to show the sections instructions, the follow is the mysql sections:
+### You can use -I option to show the sections instructions, the follow is the mysql sections:
 
     $ python sss.py -T mysql -I
 	sss version 0.1.0
