@@ -77,185 +77,204 @@ Support mysql status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     ________________________________________
     Section|time : os time
     ----------------------------------------
-    Column |Time : show the time when the status display
+    Column |Time : Show the time when the status display.
     ________________________________________
     Section|os_cpu : os cpu status, collect from /proc/stat file
     ----------------------------------------
-    Column |usr : percentage of cpu user+nice time
-    Column |sys : percentage of cpu system+irq+softirq time
-    Column |idl : percentage of cpu idle time
-    Column |iow : percentage of cpu iowait time
+    Column |usr : Percentage of cpu user+nice time.
+    Column |sys : Percentage of cpu system+irq+softirq time.
+    Column |idl : Percentage of cpu idle time.
+    Column |iow : Percentage of cpu iowait time.
     ________________________________________
     Section|os_load : os cpu average load status, collect from
            | /proc/loadavg file
     ----------------------------------------
-    Column |1m : one minute average active tasks
-    Column |5m : five minute average active tasks
-    Column |15m : fifteen minute average active tasks
+    Column |1m : One minute average active tasks.
+    Column |5m : Five minute average active tasks.
+    Column |15m : Fifteen minute average active tasks.
     ________________________________________
     Section|os_swap : os swap status, collect from /proc/vmstat file
     ----------------------------------------
-    Column |si : counts per second of data moved from memory to swap,
-           | related to pswpin
-    Column |so : counts per second of data moved from swap to memory,
-           | related to pswpout
+    Column |si : Counts per second of data moved from memory to swap,
+           | related to pswpin.
+    Column |so : Counts per second of data moved from swap to memory,
+           | related to pswpout.
     ________________________________________
     Section|os_net_bytes : os network bytes status, collect from
            | /proc/net/dev file, you need to use --net-face option to
            | set the net face name that you want to monitor, the net
            | face name is in the /proc/net/dev file
     ----------------------------------------
-    Column |in : bytes per second the network incoming
-    Column |out : bytes per second the network outgoing
+    Column |in : Bytes per second the network incoming.
+    Column |out : Bytes per second the network outgoing.
     ________________________________________
     Section|os_net_packages : os network packages status, collect from
            | /proc/net/dev file, you need to use --net-face option to
            | set the net face name that you want to monitor, the net
            | face name is in the /proc/net/dev file
     ----------------------------------------
-    Column |in : packages per second the network incoming
-    Column |out : packages per second the network outgoing
+    Column |in : Packages per second the network incoming.
+    Column |out : Packages per second the network outgoing.
     ________________________________________
     Section|os_disk : os disk status, collect from /proc/diskstats file,
            | you need to use --disk-name option to set the disk name
            | that you want to monitor, the disk name is in the
            | /proc/diskstats file
     ----------------------------------------
-    Column |reads : counts per second read from the disk
-    Column |writes : counts per second write to the disk
-    Column |rbytes : bytes per second read from the disk
-    Column |wbytes : bytes per second write to the disk
-    Column |queue : disk queue length per second
-    Column |await : average milliseconds of queue and service time for
-           | each read/write
-    Column |svctm : average milliseconds of service time for each
-           | read/write
-    Column |%util : disk utilization percent
+    Column |reads : Counts per second read from the disk.
+    Column |writes : Counts per second write to the disk.
+    Column |rbytes : Bytes per second read from the disk.
+    Column |wbytes : Bytes per second write to the disk.
+    Column |queue : Disk queue length per second.
+    Column |await : Average milliseconds of queue and service time for
+           | each read/write.
+    Column |svctm : Average milliseconds of service time for each
+           | read/write.
+    Column |%util : Disk utilization percent.
     ________________________________________
     Section|proc_cpu : process cpu status, collect from /proc/[pid]/stat
            | file, usually the pid should automatically get from the
            | server.getPidNum() function, but you can also replace the
            | pid by the --proc-pid option
     ----------------------------------------
-    Column |%cpu : cpu utilization per second
+    Column |%cpu : Cpu utilization per second.
     ________________________________________
     Section|proc_mem : process memory status, collect from
            | /proc/[pid]/status file, usually the pid should
            | automatically get from the server.getPidNum() function, but
            | you can also replace the pid by the --proc-pid option
     ----------------------------------------
-    Column |rss : bytes for resident memory size of the process in
-    Column |vsz : bytes for virtual memory size of the process in
+    Column |rss : Bytes for resident memory size of the process in.
+    Column |vsz : Bytes for virtual memory size of the process in.
     ________________________________________
     Section|cmds : mysql commands status, collect from 'show global
            | status'
     ----------------------------------------
-    Column |TPs : transactions per second
-    Column |QPs : select commands per second
-    Column |DPs : delete commands per second
-    Column |IPs : insert commands per second
-    Column |UPs : update commands per second
-    Column |DIUPs : ddl(delete+insert+update) commands per second
+    Column |TPs : Transactions per second.
+    Column |QPs : Select commands per second.
+    Column |DPs : Delete commands per second.
+    Column |IPs : Insert commands per second.
+    Column |UPs : Update commands per second.
+    Column |DIUPs : DDL(delete+insert+update) commands per second.
     ________________________________________
     Section|net : mysql network status, collect from 'show global
            | status'
     ----------------------------------------
-    Column |NetIn : bytes per second received from all clients
-    Column |NetOut : bytes per second sent to all clients
+    Column |NetIn : Bytes per second received from all clients.
+    Column |NetOut : Bytes per second sent to all clients.
     ________________________________________
     Section|threads_conns : mysql thread status, collect from 'show
            | global status'
     ----------------------------------------
-    Column |Run : the number of threads that are not sleeping
-    Column |Create : counts per second of threads created to handle
-           | connections
-    Column |Cache : the number of threads in the thread cache
-    Column |Conns : the number of currently open connections
-    Column |Try : counts per second of connection attempts (successful
-           | or not) to the MySQL server
-    Column |Abort : counts per second of failed attempts to connect to
-           | the MySQL server
+    Column |Run : The number of threads that are not sleeping.
+    Column |Create : Counts per second of threads created to handle
+           | connections.
+    Column |Cache : The number of threads in the thread cache.
+    Column |Conns : The number of currently open connections.
+    Column |Try : Counts per second of connection attempts (successful
+           | or not) to the MySQL server.
+    Column |Abort : Counts per second of failed attempts to connect to
+           | the MySQL server.
     ________________________________________
     Section|innodb_redo_log : mysql innodb redo log status, collect from
            | 'show engine innodb status'
     ----------------------------------------
-    Column |Written : bytes per second redo log data written
-    Column |Flushed : bytes per second redo log data flushed
-    Column |Checked : bytes per second redo log data checked
+    Column |Written : Bytes per second redo log data written.
+    Column |Flushed : Bytes per second redo log data flushed.
+    Column |Checked : Bytes per second redo log data checked.
     ________________________________________
     Section|innodb_log : mysql innodb redo log status, collect from
            | 'show global status' and 'show engine innodb status'
     ----------------------------------------
-    Column |HisList : history list length
-    Column |Fsyncs : counts per second of fsync() writes done to the log
-           | file
-    Column |Written : bytes per second written to the log file
+    Column |HisList : History list length.
+    Column |Fsyncs : Counts per second of fsync() writes done to the log
+           | file.
+    Column |Written : Bytes per second written to the log file.
     ________________________________________
     Section|innodb_bp_usage : mysql innodb buffer pool status, collect
            | from 'show global status'
     ----------------------------------------
-    Column |DataPct : data pages percentage of possession in total pages
-    Column |Dirty : the number of pages currently dirty
-    Column |DReads : counts per second of logical reads that InnoDB
+    Column |DataPct : Data pages percentage of possession in total
+           | pages.
+    Column |Dirty : The number of pages currently dirty.
+    Column |DReads : Counts per second of logical reads that InnoDB
            | could not satisfy from the buffer pool, and had to read
-           | directly from the disk
-    Column |Reads : counts per second of logical read requests
-    Column |Writes : counts per second of writes done to the InnoDB
-           | buffer pool
+           | directly from the disk.
+    Column |Reads : Counts per second of logical read requests.
+    Column |Writes : Counts per second of writes done to the InnoDB
+           | buffer pool.
     ________________________________________
     Section|innodb_rows : mysql innodb rows status, collect from 'show
            | global status'
     ----------------------------------------
-    Column |Insert : counts per second of rows inserted into InnoDB
-           | tables
-    Column |Update : counts per second of rows updated in InnoDB tables
-    Column |Delete : counts per second of rows deleted in InnoDB tables
-    Column |Read : counts per second of rows read from InnoDB tables
+    Column |Insert : Counts per second of rows inserted into InnoDB
+           | tables.
+    Column |Update : Counts per second of rows updated in InnoDB tables.
+    Column |Delete : Counts per second of rows deleted in InnoDB tables.
+    Column |Read : Counts per second of rows read from InnoDB tables.
     ________________________________________
     Section|innodb_data : mysql innodb data status, collect from 'show
            | global status'
     ----------------------------------------
-    Column |Reads : counts per second of data reads (OS file reads)
-    Column |Writes : counts per second of data writes
-    Column |Read : bytes per second data read
-    Column |Written : bytes per second data written
+    Column |Reads : Counts per second of data reads (OS file reads).
+    Column |Writes : Counts per second of data writes.
+    Column |Read : Bytes per second data read.
+    Column |Written : Bytes per second data written.
     ________________________________________
     Section|row_lock : mysql row lock status, collect from 'show global
            | status'
     ----------------------------------------
-    Column |LWaits : times per second a row lock had to be waited for
-    Column |LTime : milliseconds spent in acquiring row locks among one
-           | second
+    Column |LWaits : Times per second a row lock had to be waited for.
+    Column |LTime : Milliseconds spent in acquiring row locks among one
+           | second.
     ________________________________________
     Section|table_lock : mysql table lock status, collect from 'show
            | global status'
     ----------------------------------------
-    Column |LWait : times per second that a request for a table lock
+    Column |LWait : Times per second that a request for a table lock
            | could not be granted immediately and a wait was needed. If
            | this is high and you have performance problems, you should
            | first optimize your queries, and then either split your
-           | table or tables or use replication
-    Column |LImt : times per second that a request for a table lock
-           | could be granted immediately
+           | table or tables or use replication.
+    Column |LImt : Times per second that a request for a table lock
+           | could be granted immediately.
     ________________________________________
     Section|innodb_internal_lock : mysql innodb internal lock status,
            | collect from 'show engine innodb status'
     ----------------------------------------
-    Column |MSpin : times per second the Mutex spin waits
-    Column |MRound : times per second the threads looped in the
-           | spin-wait cycle for Mutex
-    Column |MOWait : times per second the thread gave up spin-waiting
-           | and went to sleep instead for Mutex
-    Column |SSpin : times per second the RW-shared spin waits
-    Column |SRound : times per second the threads looped in the
-           | spin-wait cycle for RW-shared
-    Column |SOWait : times per second the thread gave up spin-waiting
-           | and went to sleep instead for RW-shared
-    Column |ESpin : times per second the RW-excl spin waits
-    Column |ERound : times per second the threads looped in the
-           | spin-wait cycle for RW-excl
-    Column |EOWait : times per second the thread gave up spin-waiting
-           | and went to sleep instead for RW-excl
+    Column |MSpin : Times per second the Mutex spin waits.
+    Column |MRound : Times per second the threads looped in the
+           | spin-wait cycle for Mutex.
+    Column |MOWait : Times per second the thread gave up spin-waiting
+           | and went to sleep instead for Mutex.
+    Column |SSpin : Times per second the RW-shared spin waits.
+    Column |SRound : Times per second the threads looped in the
+           | spin-wait cycle for RW-shared.
+    Column |SOWait : Times per second the thread gave up spin-waiting
+           | and went to sleep instead for RW-shared.
+    Column |ESpin : Times per second the RW-excl spin waits.
+    Column |ERound : Times per second the threads looped in the
+           | spin-wait cycle for RW-excl.
+    Column |EOWait : Times per second the thread gave up spin-waiting
+           | and went to sleep instead for RW-excl.
+    ________________________________________
+    Section|slave : mysql slave status, collect from 'show slave status'
+    ----------------------------------------
+    Column |Delay : This is the 'Seconds_Behind_Master', based on the
+           | timestamps stored in events, measures the time difference
+           | in seconds between the slave SQL thread and the slave I/O
+           | thread. If the network connection between master and slave
+           | is fast, the slave I/O thread is very close to the master,
+           | so this field is a good approximation of how late the slave
+           | SQL thread is compared to the master. If the network is
+           | slow, this is not a good approximation; the slave SQL
+           | thread may quite often be caught up with the slow-reading
+           | slave I/O thread, so Seconds_Behind_Master often shows a
+           | value of 0, even if the I/O thread is late compared to the
+           | master. In other words, this column is useful only for fast
+           | networks.
+    Column |RSpace : The total combined size of all existing relay log
+           | files.
     ________________________________________
 
     
