@@ -320,7 +320,7 @@ def field_handler_time(column, status):
     return column_format % (9, time.strftime("%H:%M:%S", time.localtime()))
 
 time_section = StatusSection("time", [
-StatusColumn("Time", 5, column_flags_string, field_handler_time, [], "show the time when the status display")
+StatusColumn("Time", 5, column_flags_string, field_handler_time, [], "Show the time when the status display.")
 ],[],"os time")
 
 def get_os_cpu_status(server, status):
@@ -354,10 +354,10 @@ def field_handler_os_cpu(column, status):
     return "%3.1f"%(float(value_diff)/float(total_diff) * 100)
 
 os_cpu_section = StatusSection("os_cpu", [
-StatusColumn("usr", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_usr","os_cpu_total"], "percentage of cpu user+nice time"),
-StatusColumn("sys", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_sys","os_cpu_total"], "percentage of cpu system+irq+softirq time"),
-StatusColumn("idl", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_idl","os_cpu_total"], "percentage of cpu idle time"),
-StatusColumn("iow", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_iow","os_cpu_total"], "percentage of cpu iowait time")
+StatusColumn("usr", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_usr","os_cpu_total"], "Percentage of cpu user+nice time."),
+StatusColumn("sys", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_sys","os_cpu_total"], "Percentage of cpu system+irq+softirq time."),
+StatusColumn("idl", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_idl","os_cpu_total"], "Percentage of cpu idle time."),
+StatusColumn("iow", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_iow","os_cpu_total"], "Percentage of cpu iowait time.")
 ],[get_os_cpu_status],
 "os cpu status, collect from /proc/stat file")
 
@@ -374,9 +374,9 @@ def get_os_load_status(server, status):
     return
 
 os_load_section = StatusSection("os_load", [
-StatusColumn("1m", 4, column_flags_string, field_handler_common, ["os_load_one"], "one minute average active tasks"),
-StatusColumn("5m", 4, column_flags_string, field_handler_common, ["os_load_five"], "five minute average active tasks"),
-StatusColumn("15m", 3, column_flags_string, field_handler_common, ["os_load_fifteen"], "fifteen minute average active tasks")
+StatusColumn("1m", 4, column_flags_string, field_handler_common, ["os_load_one"], "One minute average active tasks."),
+StatusColumn("5m", 4, column_flags_string, field_handler_common, ["os_load_five"], "Five minute average active tasks."),
+StatusColumn("15m", 3, column_flags_string, field_handler_common, ["os_load_fifteen"], "Fifteen minute average active tasks.")
 ],[get_os_load_status],
 "os cpu average load status, collect from /proc/loadavg file")
 
@@ -402,8 +402,8 @@ def get_os_swap_status(server, status):
     return
 
 os_swap_section = StatusSection("os_swap", [
-StatusColumn("si", 4, column_flags_rate, field_handler_common, ["os_swap_pswpin"], "counts per second of data moved from memory to swap, related to pswpin"),
-StatusColumn("so", 4, column_flags_rate, field_handler_common, ["os_swap_pswpout"], "counts per second of data moved from swap to memory, related to pswpout")
+StatusColumn("si", 4, column_flags_rate, field_handler_common, ["os_swap_pswpin"], "Counts per second of data moved from memory to swap, related to pswpin."),
+StatusColumn("so", 4, column_flags_rate, field_handler_common, ["os_swap_pswpout"], "Counts per second of data moved from swap to memory, related to pswpout.")
 ],[get_os_swap_status],
 "os swap status, collect from /proc/vmstat file")
 
@@ -427,15 +427,15 @@ def get_os_net_status(server, status):
     return
 
 os_net_bytes_section = StatusSection("os_net_bytes", [
-StatusColumn("in", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_in"], "bytes per second the network incoming"),
-StatusColumn("out", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_out"], "bytes per second the network outgoing")
+StatusColumn("in", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_in"], "Bytes per second the network incoming."),
+StatusColumn("out", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_out"], "Bytes per second the network outgoing.")
 ],[get_os_net_status],
 "os network bytes status, collect from /proc/net/dev file, you need to use --net-face option "
 "to set the net face name that you want to monitor, the net face name is in the /proc/net/dev file")
 
 os_net_packages_section = StatusSection("os_net_packages", [
-StatusColumn("in", 0, column_flags_rate, field_handler_common, ["os_net_packages_in"], "packages per second the network incoming"),
-StatusColumn("out", 0, column_flags_rate, field_handler_common, ["os_net_packages_out"], "packages per second the network outgoing")
+StatusColumn("in", 0, column_flags_rate, field_handler_common, ["os_net_packages_in"], "Packages per second the network incoming."),
+StatusColumn("out", 0, column_flags_rate, field_handler_common, ["os_net_packages_out"], "Packages per second the network outgoing.")
 ],[get_os_net_status],
 "os network packages status, collect from /proc/net/dev file, you need to use --net-face option "
 "to set the net face name that you want to monitor, the net face name is in the /proc/net/dev file")
@@ -526,14 +526,14 @@ def get_disk_status(server, status):
     return
 
 os_disk_section = StatusSection("os_disk", [
-StatusColumn("reads", 0, column_flags_string, field_handler_common, ["os_disk_reads"], "counts per second read from the disk"),
-StatusColumn("writes", 0, column_flags_string, field_handler_common, ["os_disk_writes"], "counts per second write to the disk"),
-StatusColumn("rbytes", 0, column_flags_string, field_handler_common, ["os_disk_read_bytes"], "bytes per second read from the disk"),
-StatusColumn("wbytes", 0, column_flags_string, field_handler_common, ["os_disk_write_bytes"], "bytes per second write to the disk"),
-StatusColumn("queue", 1, column_flags_string, field_handler_common, ["os_disk_queue"], "disk queue length per second"),
-StatusColumn("await", 1, column_flags_string, field_handler_common, ["os_disk_wait"], "average milliseconds of queue and service time for each read/write"),
-StatusColumn("svctm", 1, column_flags_string, field_handler_common, ["os_disk_service_time"], "average milliseconds of service time for each read/write"),
-StatusColumn("%util", 1, column_flags_string, field_handler_common, ["os_disk_busy"], "disk utilization percent")
+StatusColumn("reads", 0, column_flags_string, field_handler_common, ["os_disk_reads"], "Counts per second read from the disk."),
+StatusColumn("writes", 0, column_flags_string, field_handler_common, ["os_disk_writes"], "Counts per second write to the disk."),
+StatusColumn("rbytes", 0, column_flags_string, field_handler_common, ["os_disk_read_bytes"], "Bytes per second read from the disk."),
+StatusColumn("wbytes", 0, column_flags_string, field_handler_common, ["os_disk_write_bytes"], "Bytes per second write to the disk."),
+StatusColumn("queue", 1, column_flags_string, field_handler_common, ["os_disk_queue"], "Disk queue length per second."),
+StatusColumn("await", 1, column_flags_string, field_handler_common, ["os_disk_wait"], "Average milliseconds of queue and service time for each read/write."),
+StatusColumn("svctm", 1, column_flags_string, field_handler_common, ["os_disk_service_time"], "Average milliseconds of service time for each read/write."),
+StatusColumn("%util", 1, column_flags_string, field_handler_common, ["os_disk_busy"], "Disk utilization percent.")
 ],[get_disk_status],
 "os disk status, collect from /proc/diskstats file, you need to use --disk-name option "
 "to set the disk name that you want to monitor, the disk name is in the /proc/diskstats file")
@@ -561,7 +561,7 @@ def get_proc_cpu_status(server, status):
     return
 
 proc_cpu_section = StatusSection("proc_cpu", [
-StatusColumn("%cpu", 0, column_flags_rate, field_handler_common, ["proc_cpu"], "cpu utilization per second")
+StatusColumn("%cpu", 0, column_flags_rate, field_handler_common, ["proc_cpu"], "Cpu utilization per second.")
 ], [get_proc_cpu_status],
 "process cpu status, collect from /proc/[pid]/stat file, usually the pid should automatically "
 "get from the server.getPidNum() function, but you can also replace the pid by the --proc-pid option")
@@ -596,8 +596,8 @@ def get_proc_mem_status(server, status):
     return
 
 proc_mem_section = StatusSection("proc_mem", [
-StatusColumn("rss", 0, column_flags_bytes, field_handler_common, ["proc_mem_res"], "bytes for resident memory size of the process in"),
-StatusColumn("vsz", 0, column_flags_bytes, field_handler_common, ["proc_mem_virt"], "bytes for virtual memory size of the process in")
+StatusColumn("rss", 0, column_flags_bytes, field_handler_common, ["proc_mem_res"], "Bytes for resident memory size of the process in."),
+StatusColumn("vsz", 0, column_flags_bytes, field_handler_common, ["proc_mem_virt"], "Bytes for virtual memory size of the process in.")
 ], [get_proc_mem_status],
 "process memory status, collect from /proc/[pid]/status file, usually the pid should automatically "
 "get from the server.getPidNum() function, but you can also replace the pid by the --proc-pid option")
@@ -933,92 +933,107 @@ def get_mysql_status_for_server(server):
     return
 
 mysql_commands_section = StatusSection("cmds", [
-StatusColumn("TPs", 0, column_flags_rate, field_handler_common, ["Com_commit", "Com_rollback"], "transactions per second"),
-StatusColumn("QPs", 0, column_flags_rate, field_handler_common, ["Com_select"], "select commands per second"),
-StatusColumn("DPs", 0, column_flags_rate, field_handler_common,["Com_delete"], "delete commands per second"),
-StatusColumn("IPs", 0, column_flags_rate, field_handler_common,["Com_insert"], "insert commands per second"),
-StatusColumn("UPs", 0, column_flags_rate, field_handler_common,["Com_update"], "update commands per second"),
-StatusColumn("DIUPs", 0, column_flags_rate, field_handler_common,["Com_delete","Com_insert","Com_update"], "ddl(delete+insert+update) commands per second")
+StatusColumn("TPs", 0, column_flags_rate, field_handler_common, ["Com_commit", "Com_rollback"], "Transactions per second."),
+StatusColumn("QPs", 0, column_flags_rate, field_handler_common, ["Com_select"], "Select commands per second."),
+StatusColumn("DPs", 0, column_flags_rate, field_handler_common,["Com_delete"], "Delete commands per second."),
+StatusColumn("IPs", 0, column_flags_rate, field_handler_common,["Com_insert"], "Insert commands per second."),
+StatusColumn("UPs", 0, column_flags_rate, field_handler_common,["Com_update"], "Update commands per second."),
+StatusColumn("DIUPs", 0, column_flags_rate, field_handler_common,["Com_delete","Com_insert","Com_update"], "DDL(delete+insert+update) commands per second.")
 ], [get_mysql_status],
 "mysql commands status, collect from \'show global status\'")
 
 mysql_net_section = StatusSection("net", [
-StatusColumn("NetIn", 0, column_flags_rate|column_flags_bytes, field_handler_common,["Bytes_received"], "bytes per second received from all clients"),
-StatusColumn("NetOut", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Bytes_sent"], "bytes per second sent to all clients")
+StatusColumn("NetIn", 0, column_flags_rate|column_flags_bytes, field_handler_common,["Bytes_received"], "Bytes per second received from all clients."),
+StatusColumn("NetOut", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Bytes_sent"], "Bytes per second sent to all clients.")
 ], [get_mysql_status],
 "mysql network status, collect from \'show global status\'")
 
 mysql_threads_section = StatusSection("threads_conns", [
-StatusColumn("Run", 0, column_flags_none, field_handler_common, ["Threads_running"], "the number of threads that are not sleeping"),
-StatusColumn("Create", 0, column_flags_rate, field_handler_common, ["Threads_created"], "counts per second of threads created to handle connections"),
-StatusColumn("Cache", 0, column_flags_none, field_handler_common, ["Threads_cached"], "the number of threads in the thread cache"),
-StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["Threads_connected"], "the number of currently open connections"),
-StatusColumn("Try", 0, column_flags_rate, field_handler_common, ["Connections"], "counts per second of connection attempts (successful or not) to the MySQL server"),
-StatusColumn("Abort", 0, column_flags_rate, field_handler_common, ["Aborted_connects"], "counts per second of failed attempts to connect to the MySQL server")
+StatusColumn("Run", 0, column_flags_none, field_handler_common, ["Threads_running"], "The number of threads that are not sleeping."),
+StatusColumn("Create", 0, column_flags_rate, field_handler_common, ["Threads_created"], "Counts per second of threads created to handle connections."),
+StatusColumn("Cache", 0, column_flags_none, field_handler_common, ["Threads_cached"], "The number of threads in the thread cache."),
+StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["Threads_connected"], "The number of currently open connections."),
+StatusColumn("Try", 0, column_flags_rate, field_handler_common, ["Connections"], "Counts per second of connection attempts (successful or not) to the MySQL server."),
+StatusColumn("Abort", 0, column_flags_rate, field_handler_common, ["Aborted_connects"], "Counts per second of failed attempts to connect to the MySQL server.")
 ], [get_mysql_status],
 "mysql thread status, collect from \'show global status\'")
 
 mysql_innodb_redo_log_section = StatusSection("innodb_redo_log", [
-StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_bytes_written"], "bytes per second redo log data written"),
-StatusColumn("Flushed", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_bytes_flushed"], "bytes per second redo log data flushed"),
-StatusColumn("Checked", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_last_checkpoint"], "bytes per second redo log data checked")
+StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_bytes_written"], "Bytes per second redo log data written."),
+StatusColumn("Flushed", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_bytes_flushed"], "Bytes per second redo log data flushed."),
+StatusColumn("Checked", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_last_checkpoint"], "Bytes per second redo log data checked.")
 ], [get_innodb_status],
 "mysql innodb redo log status, collect from \'show engine innodb status\'")
 
 mysql_innodb_log_section = StatusSection("innodb_log", [
-StatusColumn("HisList", 0, column_flags_none, field_handler_common, ["inno_history_list"], "history list length"),
-StatusColumn("Fsyncs", 0, column_flags_rate, field_handler_common, ["Innodb_os_log_fsyncs"], "counts per second of fsync() writes done to the log file"),
-StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_os_log_written"], "bytes per second written to the log file")
+StatusColumn("HisList", 0, column_flags_none, field_handler_common, ["inno_history_list"], "History list length."),
+StatusColumn("Fsyncs", 0, column_flags_rate, field_handler_common, ["Innodb_os_log_fsyncs"], "Counts per second of fsync() writes done to the log file."),
+StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_os_log_written"], "Bytes per second written to the log file.")
 ], [get_mysql_status, get_innodb_status],
 "mysql innodb redo log status, collect from \'show global status\' and \'show engine innodb status\'")
 
 mysql_innodb_buffer_pool_usage_section = StatusSection("innodb_bp_usage", [
-StatusColumn("DataPct", 0, column_flags_ratio, field_handler_common, ["Innodb_buffer_pool_pages_data","Innodb_buffer_pool_pages_total"], "data pages percentage of possession in total pages"),
-StatusColumn("Dirty", 0, column_flags_none, field_handler_common, ["Innodb_buffer_pool_pages_dirty"], "the number of pages currently dirty"),
-StatusColumn("DReads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_reads"], "counts per second of logical reads that InnoDB could not satisfy from the buffer pool, and had to read directly from the disk"),
-StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_read_requests"], "counts per second of logical read requests"),
-StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_write_requests"], "counts per second of writes done to the InnoDB buffer pool")
+StatusColumn("DataPct", 0, column_flags_ratio, field_handler_common, ["Innodb_buffer_pool_pages_data","Innodb_buffer_pool_pages_total"], "Data pages percentage of possession in total pages."),
+StatusColumn("Dirty", 0, column_flags_none, field_handler_common, ["Innodb_buffer_pool_pages_dirty"], "The number of pages currently dirty."),
+StatusColumn("DReads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_reads"], "Counts per second of logical reads that InnoDB could not satisfy from the buffer pool, and had to read directly from the disk."),
+StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_read_requests"], "Counts per second of logical read requests."),
+StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_write_requests"], "Counts per second of writes done to the InnoDB buffer pool.")
 ], [get_mysql_status],
 "mysql innodb buffer pool status, collect from \'show global status\'")
 
 mysql_innodb_rows_section = StatusSection("innodb_rows", [
-StatusColumn("Insert", 0, column_flags_rate, field_handler_common, ["Innodb_rows_inserted"], "counts per second of rows inserted into InnoDB tables"),
-StatusColumn("Update", 0, column_flags_rate, field_handler_common, ["Innodb_rows_updated"], "counts per second of rows updated in InnoDB tables"),
-StatusColumn("Delete", 0, column_flags_rate, field_handler_common, ["Innodb_rows_deleted"], "counts per second of rows deleted in InnoDB tables"),
-StatusColumn("Read", 0, column_flags_rate, field_handler_common, ["Innodb_rows_read"], "counts per second of rows read from InnoDB tables")
+StatusColumn("Insert", 0, column_flags_rate, field_handler_common, ["Innodb_rows_inserted"], "Counts per second of rows inserted into InnoDB tables."),
+StatusColumn("Update", 0, column_flags_rate, field_handler_common, ["Innodb_rows_updated"], "Counts per second of rows updated in InnoDB tables."),
+StatusColumn("Delete", 0, column_flags_rate, field_handler_common, ["Innodb_rows_deleted"], "Counts per second of rows deleted in InnoDB tables."),
+StatusColumn("Read", 0, column_flags_rate, field_handler_common, ["Innodb_rows_read"], "Counts per second of rows read from InnoDB tables.")
 ], [get_mysql_status],
 "mysql innodb rows status, collect from \'show global status\'")
 
 mysql_innodb_data_section = StatusSection("innodb_data", [
-StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_data_reads"], "counts per second of data reads (OS file reads)"),
-StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_data_writes"], "counts per second of data writes"),
-StatusColumn("Read", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_read"], "bytes per second data read"),
-StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_written"], "bytes per second data written")
+StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_data_reads"], "Counts per second of data reads (OS file reads)."),
+StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_data_writes"], "Counts per second of data writes."),
+StatusColumn("Read", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_read"], "Bytes per second data read."),
+StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_written"], "Bytes per second data written.")
 ], [get_mysql_status],
 "mysql innodb data status, collect from \'show global status\'")
 
 mysql_innodb_row_lock_section = StatusSection("row_lock", [
-StatusColumn("LWaits", 0, column_flags_rate, field_handler_common, ["Innodb_row_lock_waits"], "times per second a row lock had to be waited for"),
-StatusColumn("LTime", 0, column_flags_rate, field_handler_common, ["Innodb_row_lock_time"], "milliseconds spent in acquiring row locks among one second")
+StatusColumn("LWaits", 0, column_flags_rate, field_handler_common, ["Innodb_row_lock_waits"], "Times per second "
+    "a row lock had to be waited for."),
+StatusColumn("LTime", 0, column_flags_rate, field_handler_common, ["Innodb_row_lock_time"], "Milliseconds spent "
+    "in acquiring row locks among one second.")
 ], [get_mysql_status],
 "mysql row lock status, collect from \'show global status\'")
 
 mysql_table_lock_section = StatusSection("table_lock", [
-StatusColumn("LWait", 0, column_flags_rate, field_handler_common, ["Table_locks_waited"], "times per second that a request for a table lock could not be granted immediately and a wait was needed. If this is high and you have performance problems, you should first optimize your queries, and then either split your table or tables or use replication"),
-StatusColumn("LImt", 0, column_flags_rate, field_handler_common, ["Table_locks_immediate"], "times per second that a request for a table lock could be granted immediately")
+StatusColumn("LWait", 0, column_flags_rate, field_handler_common, ["Table_locks_waited"], "Times per second that "
+    "a request for a table lock could not be granted immediately and a wait was needed. If this is high "
+    "and you have performance problems, you should first optimize your queries, and then either split "
+    "your table or tables or use replication."),
+StatusColumn("LImt", 0, column_flags_rate, field_handler_common, ["Table_locks_immediate"], "Times per second "
+    "that a request for a table lock could be granted immediately.")
 ], [get_mysql_status],
 "mysql table lock status, collect from \'show global status\'")
 
 mysql_innodb_internal_lock_section = StatusSection("innodb_internal_lock", [
-StatusColumn("MSpin", 0, column_flags_rate, field_handler_common, ["inno_mutex_spin_waits"], "times per second the Mutex spin waits"),
-StatusColumn("MRound", 0, column_flags_rate, field_handler_common, ["inno_mutex_rounds"], "times per second the threads looped in the spin-wait cycle for Mutex"),
-StatusColumn("MOWait", 0, column_flags_rate, field_handler_common, ["inno_mutex_os_waits"], "times per second the thread gave up spin-waiting and went to sleep instead for Mutex"),
-StatusColumn("SSpin", 0, column_flags_rate, field_handler_common, ["inno_shrdrw_spins"], "times per second the RW-shared spin waits"),
-StatusColumn("SRound", 0, column_flags_rate, field_handler_common, ["inno_shrdrw_rounds"], "times per second the threads looped in the spin-wait cycle for RW-shared"),
-StatusColumn("SOWait", 0, column_flags_rate, field_handler_common, ["inno_shrdrw_os_waits"], "times per second the thread gave up spin-waiting and went to sleep instead for RW-shared"),
-StatusColumn("ESpin", 0, column_flags_rate, field_handler_common, ["inno_exclrw_spins"], "times per second the RW-excl spin waits"),
-StatusColumn("ERound", 0, column_flags_rate, field_handler_common, ["inno_exclrw_rounds"], "times per second the threads looped in the spin-wait cycle for RW-excl"),
-StatusColumn("EOWait", 0, column_flags_rate, field_handler_common, ["inno_exclrw_os_waits"], "times per second the thread gave up spin-waiting and went to sleep instead for RW-excl")
+StatusColumn("MSpin", 0, column_flags_rate, field_handler_common, ["inno_mutex_spin_waits"], "Times per second "
+    "the Mutex spin waits."),
+StatusColumn("MRound", 0, column_flags_rate, field_handler_common, ["inno_mutex_rounds"], "Times per second the "
+    "threads looped in the spin-wait cycle for Mutex."),
+StatusColumn("MOWait", 0, column_flags_rate, field_handler_common, ["inno_mutex_os_waits"], "Times per second "
+    "the thread gave up spin-waiting and went to sleep instead for Mutex."),
+StatusColumn("SSpin", 0, column_flags_rate, field_handler_common, ["inno_shrdrw_spins"], "Times per second the "
+    "RW-shared spin waits."),
+StatusColumn("SRound", 0, column_flags_rate, field_handler_common, ["inno_shrdrw_rounds"], "Times per second "
+    "the threads looped in the spin-wait cycle for RW-shared."),
+StatusColumn("SOWait", 0, column_flags_rate, field_handler_common, ["inno_shrdrw_os_waits"], "Times per second "
+    "the thread gave up spin-waiting and went to sleep instead for RW-shared."),
+StatusColumn("ESpin", 0, column_flags_rate, field_handler_common, ["inno_exclrw_spins"], "Times per second the "
+    "RW-excl spin waits."),
+StatusColumn("ERound", 0, column_flags_rate, field_handler_common, ["inno_exclrw_rounds"], "Times per second "
+    "the threads looped in the spin-wait cycle for RW-excl."),
+StatusColumn("EOWait", 0, column_flags_rate, field_handler_common, ["inno_exclrw_os_waits"], "Times per second "
+    "the thread gave up spin-waiting and went to sleep instead for RW-excl.")
 ], [get_innodb_status],
 "mysql innodb internal lock status, collect from \'show engine innodb status\'")
 
