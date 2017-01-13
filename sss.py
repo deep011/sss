@@ -831,6 +831,22 @@ def get_mysql_status(server, status):
         status[variable_name] = value
     return
 
+def get_slave_status(server, status):
+    query= "show slave status"
+    server.cursor.execute(query)
+
+    row = server.cursor.fetchone()
+    if (row == None):
+        status["seconds_behind_master"] = 0
+        status["relay_log_space"] = 0
+        return
+
+    row_dict = dict(zip(server.cursor.column_names, row))
+    status["seconds_behind_master"] = row_dict["Seconds_Behind_Master"]
+    status["relay_log_space"] = row_dict["Relay_Log_Space"]
+
+    return
+
 def parse_innodb_status(innodb_status, status):
     for line in innodb_status.splitlines():
         if line.startswith("History list length"):
@@ -1006,6 +1022,18 @@ StatusColumn("EOWait", 0, column_flags_rate, field_handler_common, ["inno_exclrw
 ], [get_innodb_status],
 "mysql innodb internal lock status, collect from \'show engine innodb status\'")
 
+mysql_slave_section = StatusSection("slave", [
+StatusColumn("Delay", 0, column_flags_none, field_handler_common, ["seconds_behind_master"], "This is the \'Seconds_Behind_Master\', "
+    "based on the timestamps stored in events, measures the time difference in seconds between the slave SQL thread and the "
+    "slave I/O thread. If the network connection between master and slave is fast, the slave I/O thread is very close to "
+    "the master, so this field is a good approximation of how late the slave SQL thread is compared to the master. "
+    "If the network is slow, this is not a good approximation; the slave SQL thread may quite often be caught up with "
+    "the slow-reading slave I/O thread, so Seconds_Behind_Master often shows a value of 0, even if the I/O thread is "
+    "late compared to the master. In other words, this column is useful only for fast networks."),
+StatusColumn("RSpace", 0, column_flags_bytes, field_handler_common, ["relay_log_space"], "The total combined size of all existing relay log files.")
+], [get_slave_status],
+"mysql slave status, collect from \'show slave status\'")
+
 mysql_sections = [
 mysql_commands_section,
 mysql_net_section,
@@ -1017,7 +1045,8 @@ mysql_innodb_rows_section,
 mysql_innodb_data_section,
 mysql_innodb_row_lock_section,
 mysql_table_lock_section,
-mysql_innodb_internal_lock_section
+mysql_innodb_internal_lock_section,
+mysql_slave_section
 ]
 mysql_sections_to_show_default = [
 time_section,
