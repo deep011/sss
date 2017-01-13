@@ -53,7 +53,7 @@ def num2readable(number):
     number_float = float(number)
     if number_float > -1000.0 and number_float < 1000.0:
         if (str(number).find(".") >= 0):
-            return "%3.1f"%number_float
+            return "%3.2f"%number_float
         else:
             return str(number)
     else:
@@ -61,11 +61,11 @@ def num2readable(number):
 
     for count in ['k', 'm', 'g']:
         if number_float > -1000.0 and number_float < 1000.0:
-            return "%3.1f%s" % (number_float, count)
+            return "%3.2f%s" % (number_float, count)
 
         number_float /= 1000.0
 
-    return "%3.1f%s" % (number_float, 't')
+    return "%3.2f%s" % (number_float, 't')
 
 def microsecond_differ_by_datetime(datetime_new, datetime_old):
     datetime_differ = datetime_new - datetime_old
