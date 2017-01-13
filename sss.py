@@ -1049,6 +1049,17 @@ StatusColumn("RSpace", 0, column_flags_bytes, field_handler_common, ["relay_log_
 ], [get_slave_status],
 "mysql slave status, collect from \'show slave status\'")
 
+mysql_handler_read_section = StatusSection("handler_read", [
+StatusColumn("First", 0, column_flags_rate, field_handler_common, ["Handler_read_first"], "Times per second the first entry in an index was read. If this value is high, it suggests that the server is doing a lot of full index scans; for example, SELECT col1 FROM foo, assuming that col1 is indexed."),
+StatusColumn("Key", 0, column_flags_rate, field_handler_common, ["Handler_read_key"], "Requests per second to read a row based on a key. If this value is high, it is a good indication that your tables are properly indexed for your queries."),
+StatusColumn("Last", 0, column_flags_rate, field_handler_common, ["Handler_read_last"], "Requests per second to read the last key in an index. With ORDER BY, the server will issue a first-key request followed by several next-key requests, whereas with ORDER BY DESC, the server will issue a last-key request followed by several previous-key requests. This variable was added in MySQL 5.5.7."),
+StatusColumn("Next", 0, column_flags_rate, field_handler_common, ["Handler_read_next"], "Requests per second to read the next row in key order. This value is incremented if you are querying an index column with a range constraint or if you are doing an index scan."),
+StatusColumn("Prev", 0, column_flags_rate, field_handler_common, ["Handler_read_prev"], "Requests per second to read the previous row in key order. This read method is mainly used to optimize ORDER BY ... DESC."),
+StatusColumn("Rnd", 0, column_flags_rate, field_handler_common, ["Handler_read_rnd"], "Requests per second to read a row based on a fixed position. This value is high if you are doing a lot of queries that require sorting of the result. You probably have a lot of queries that require MySQL to scan entire tables or you have joins that do not use keys properly."),
+StatusColumn("RNext", 0, column_flags_rate, field_handler_common, ["Handler_read_rnd_next"], "Requests per second to read the next row in the data file. This value is high if you are doing a lot of table scans. Generally this suggests that your tables are not properly indexed or that your queries are not written to take advantage of the indexes you have.")
+], [get_mysql_status],
+"mysql handler read status, collect from \'show global status\' about \'Handler_read_*\' variables")
+
 mysql_sections = [
 mysql_commands_section,
 mysql_net_section,
@@ -1061,7 +1072,8 @@ mysql_innodb_data_section,
 mysql_innodb_row_lock_section,
 mysql_table_lock_section,
 mysql_innodb_internal_lock_section,
-mysql_slave_section
+mysql_slave_section,
+mysql_handler_read_section
 ]
 mysql_sections_to_show_default = [
 time_section,
