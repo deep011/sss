@@ -1060,6 +1060,13 @@ StatusColumn("RNext", 0, column_flags_rate, field_handler_common, ["Handler_read
 ], [get_mysql_status],
 "mysql handler read status, collect from \'show global status\' about \'Handler_read_*\' variables")
 
+mysql_handler_ddl_section = StatusSection("handler_ddl", [
+StatusColumn("Write", 0, column_flags_rate, field_handler_common, ["Handler_write"], "Requests per second to insert a row in a table."),
+StatusColumn("Update", 0, column_flags_rate, field_handler_common, ["Handler_update"], "Requests per second to update a row in a table."),
+StatusColumn("Del", 0, column_flags_rate, field_handler_common, ["Handler_delete"], "Times per second that rows have been deleted from tables")
+], [get_mysql_status],
+"mysql handler ddl status, collect from \'show global status\'")
+
 mysql_sections = [
 mysql_commands_section,
 mysql_net_section,
@@ -1073,7 +1080,8 @@ mysql_innodb_row_lock_section,
 mysql_table_lock_section,
 mysql_innodb_internal_lock_section,
 mysql_slave_section,
-mysql_handler_read_section
+mysql_handler_read_section,
+mysql_handler_ddl_section
 ]
 mysql_sections_to_show_default = [
 time_section,
