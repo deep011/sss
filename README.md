@@ -276,6 +276,27 @@ Support mysql status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     Column |RSpace : The total combined size of all existing relay log
            | files.
     ________________________________________
+	Section|handler_ddl : mysql handler ddl status, collect from 'show
+           | global status'
+    ----------------------------------------
+    Column |Write : Requests per second to insert a row in a table.
+    Column |Update : Requests per second to update a row in a table.
+    Column |Del : Times per second that rows have been deleted from
+           | tables
+    ________________________________________
+    Section|handler_trx : mysql handler transaction status, collect from
+           | 'show global status'
+    ----------------------------------------
+    Column |Commit : Counts per second of internal COMMIT statements.
+    Column |Pre : Counts per second of the prepare phase of two-phase
+           | commit operations.
+    Column |Rback : Requests per second for a storage engine to perform
+           | a rollback operation.
+    Column |Spoint : Requests per second for a storage engine to place a
+           | savepoint.
+    Column |SPRb : Requests per second for a storage engine to roll back
+           | to a savepoint.
+    ________________________________________
 
     
 ## Customize sss development
