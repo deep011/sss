@@ -1067,6 +1067,15 @@ StatusColumn("Del", 0, column_flags_rate, field_handler_common, ["Handler_delete
 ], [get_mysql_status],
 "mysql handler ddl status, collect from \'show global status\'")
 
+mysql_handler_transaction_section = StatusSection("handler_trx", [
+StatusColumn("Commit", 0, column_flags_rate, field_handler_common, ["Handler_commit"], "Counts per second of internal COMMIT statements."),
+StatusColumn("Pre", 0, column_flags_rate, field_handler_common, ["Handler_prepare"], "Counts per second of the prepare phase of two-phase commit operations."),
+StatusColumn("Rback", 0, column_flags_rate, field_handler_common, ["Handler_rollback"], "Requests per second for a storage engine to perform a rollback operation."),
+StatusColumn("Spoint", 0, column_flags_rate, field_handler_common, ["Handler_savepoint"], "Requests per second for a storage engine to place a savepoint."),
+StatusColumn("SPRb", 0, column_flags_rate, field_handler_common, ["Handler_savepoint_rollback"], "Requests per second for a storage engine to roll back to a savepoint."),
+], [get_mysql_status],
+"mysql handler transaction status, collect from \'show global status\'")
+
 mysql_sections = [
 mysql_commands_section,
 mysql_net_section,
@@ -1081,7 +1090,8 @@ mysql_table_lock_section,
 mysql_innodb_internal_lock_section,
 mysql_slave_section,
 mysql_handler_read_section,
-mysql_handler_ddl_section
+mysql_handler_ddl_section,
+mysql_handler_transaction_section
 ]
 mysql_sections_to_show_default = [
 time_section,
