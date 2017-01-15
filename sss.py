@@ -356,7 +356,7 @@ def field_handler_os_cpu(column, status):
 os_cpu_section = StatusSection("os_cpu", [
 StatusColumn("usr", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_usr","os_cpu_total"], "Percentage of cpu user+nice time."),
 StatusColumn("sys", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_sys","os_cpu_total"], "Percentage of cpu system+irq+softirq time."),
-StatusColumn("idl", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_idl","os_cpu_total"], "Percentage of cpu idle time."),
+StatusColumn("idl", 3, column_flags_rate, field_handler_os_cpu, ["os_cpu_idl","os_cpu_total"], "Percentage of cpu idle time."),
 StatusColumn("iow", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_iow","os_cpu_total"], "Percentage of cpu iowait time.")
 ],[get_os_cpu_status],
 "os cpu status, collect from /proc/stat file")
