@@ -59,8 +59,10 @@ Show the os status, the follow is only the default sections to show, you can use
      12:05:45| 16.7 10.4 71.8  1.1|     2.0   317.4    8.0K   29.2M   2.2  6.7   3.1  99.6|  295.5K  675.0K|     9     0|
      12:05:46| 12.2  8.6 78.1  1.1|     6.0   304.4   24.0K   29.4M   2.1  6.9   3.2  99.3|  308.7K  671.3K|    30     0|
     
-* The unit displayed in two ways: [k,m,g,t] and [K,M,G,T].
+The unit displayed in two ways: [k,m,g,t] and [K,M,G,T].
+
 Unit [k,m,g,t] means it is number. 1t=1000g 1g=1000m 1m=1000k 1k=1000
+
 Unit [K,M,G,T] means it is bytes. 1T=1024G 1G=1024M 1M=1024K 1K=1024bytes
 
 ## Customize the status sections
