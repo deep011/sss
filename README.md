@@ -69,7 +69,7 @@ Unit [K,M,G,T] means it is bytes. 1T=1024G 1G=1024M 1M=1024K 1K=1024bytes
 
 Support os status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes','os_net_packages','os_disk','proc_cpu','proc_mem'
 
-Support mysql status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes','os_net_packages','os_disk','proc_cpu','proc_mem','cmds','net','threads_conns','innodb_redo_log','innodb_log','innodb_bp_usage','innodb_rows','innodb_data','row_lock','table_lock','innodb_internal_lock'
+Support mysql status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes','os_net_packages','os_disk','proc_cpu','proc_mem','cmds','net','threads_conns','innodb_redo_log','innodb_log','innodb_bp_usage','innodb_rows','innodb_data','row_lock','table_lock','innodb_internal_lock','slave','handler_read','handler_ddl','handler_trx'
 
 
 ### You can use -I option to show the sections instructions, the follow is the mysql sections:
