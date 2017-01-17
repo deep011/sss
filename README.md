@@ -26,6 +26,11 @@
     --disk-name: set the disk device name for os_disk sections, default is 'vda'
     --proc-pid: set the process pid number for proc_* sections, default is 0
     
+## Dependence
+
+Mysql need 'mysql-connector-python' package
+
+
 ## Run
     
 Show the mysql service status, the follow is only the default sections to show, you can use -s,-a,-d options to customize the sections.
