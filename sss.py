@@ -499,7 +499,7 @@ def get_disk_status(server, status):
                 svc_t = 0
 
             busy = 100.0 * float(ticks)/float(deltams)  #/* Utilization at disk (percent) */
-            if (busy > 100):
+            if (busy > 99.99):
                 busy = 100
 
             rkbs = 1000.0*float(rd_sectors)/deltams/2
@@ -530,9 +530,9 @@ StatusColumn("reads", 0, column_flags_string, field_handler_common, ["os_disk_re
 StatusColumn("writes", 0, column_flags_string, field_handler_common, ["os_disk_writes"], "Counts per second write to the disk."),
 StatusColumn("rbytes", 0, column_flags_string, field_handler_common, ["os_disk_read_bytes"], "Bytes per second read from the disk."),
 StatusColumn("wbytes", 0, column_flags_string, field_handler_common, ["os_disk_write_bytes"], "Bytes per second write to the disk."),
-StatusColumn("queue", 1, column_flags_string, field_handler_common, ["os_disk_queue"], "Disk queue length per second."),
-StatusColumn("await", 1, column_flags_string, field_handler_common, ["os_disk_wait"], "Average milliseconds of queue and service time for each read/write."),
-StatusColumn("svctm", 1, column_flags_string, field_handler_common, ["os_disk_service_time"], "Average milliseconds of service time for each read/write."),
+StatusColumn("queue", 2, column_flags_string, field_handler_common, ["os_disk_queue"], "Disk queue length per second."),
+StatusColumn("await", 2, column_flags_string, field_handler_common, ["os_disk_wait"], "Average milliseconds of queue and service time for each read/write."),
+StatusColumn("svctm", 2, column_flags_string, field_handler_common, ["os_disk_service_time"], "Average milliseconds of service time for each read/write."),
 StatusColumn("%util", 1, column_flags_string, field_handler_common, ["os_disk_busy"], "Disk utilization percent.")
 ],[get_disk_status],
 "os disk status, collect from /proc/diskstats file, you need to use --disk-name option "
