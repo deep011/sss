@@ -1,6 +1,8 @@
 # sss
 
-**sss** (abbreviation "Show-Service-Status") is a convenient tool to Show the Service Status(Now only support for os, mysql and redis).
+**sss** (abbreviation "Show-Service-Status") is a convenient tool to Show the Service Status.
+
+By now, sss support for os(linux), mysql and redis.
 
 ## Usage
 
@@ -319,7 +321,7 @@ Support redis status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     ________________________________________
     
     
-### You can use -I option to show the sections instructions, the follow is the mysql sections:
+### The follow is the mysql sections:
 
     $ python sss.py -T redis -I
     sss version 0.1.1
@@ -339,7 +341,7 @@ Support redis status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     Column |iow : Percentage of cpu iowait time.
     ________________________________________
     Section|os_load : os cpu average load status, collect from
-        | /proc/loadavg file
+           | /proc/loadavg file
     ----------------------------------------
     Column |1m : One minute average active tasks.
     Column |5m : Five minute average active tasks.
@@ -348,30 +350,30 @@ Support redis status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     Section|os_swap : os swap status, collect from /proc/vmstat file
     ----------------------------------------
     Column |si : Counts per second of data moved from memory to swap,
-        | related to pswpin.
+           | related to pswpin.
     Column |so : Counts per second of data moved from swap to memory,
-        | related to pswpout.
+           | related to pswpout.
     ________________________________________
     Section|os_net_bytes : os network bytes status, collect from
-        | /proc/net/dev file, you need to use --net-face option to
-        | set the net face name that you want to monitor, the net
-        | face name is in the /proc/net/dev file
+           | /proc/net/dev file, you need to use --net-face option to
+           | set the net face name that you want to monitor, the net
+           | face name is in the /proc/net/dev file
     ----------------------------------------
     Column |in : Bytes per second the network incoming.
     Column |out : Bytes per second the network outgoing.
     ________________________________________
     Section|os_net_packages : os network packages status, collect from
-        | /proc/net/dev file, you need to use --net-face option to
-        | set the net face name that you want to monitor, the net
-        | face name is in the /proc/net/dev file
+           | /proc/net/dev file, you need to use --net-face option to
+           | set the net face name that you want to monitor, the net
+           | face name is in the /proc/net/dev file
     ----------------------------------------
     Column |in : Packages per second the network incoming.
     Column |out : Packages per second the network outgoing.
     ________________________________________
     Section|os_disk : os disk status, collect from /proc/diskstats file,
-        | you need to use --disk-name option to set the disk name
-        | that you want to monitor, the disk name is in the
-        | /proc/diskstats file
+           | you need to use --disk-name option to set the disk name
+           | that you want to monitor, the disk name is in the
+           | /proc/diskstats file
     ----------------------------------------
     Column |reads : Counts per second read from the disk.
     Column |writes : Counts per second write to the disk.
@@ -379,9 +381,9 @@ Support redis status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     Column |wbytes : Bytes per second write to the disk.
     Column |queue : Disk queue length per second.
     Column |await : Average milliseconds of queue and service time for
-        | each read/write.
+           | each read/write.
     Column |svctm : Average milliseconds of service time for each
-        | read/write.
+           | read/write.
     Column |%util : Disk utilization percent.
     ________________________________________
     Section|os_mem : os memory status, collect from /proc/meminfo file
@@ -392,16 +394,16 @@ Support redis status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     Column |cached : Cached memory size bytes.
     ________________________________________
     Section|proc_cpu : process cpu status, collect from /proc/[pid]/stat
-        | file, usually the pid should automatically get from the
-        | server.getPidNum() function, but you can also replace the
-        | pid by the --proc-pid option
+           | file, usually the pid should automatically get from the
+           | server.getPidNum() function, but you can also replace the
+           | pid by the --proc-pid option
     ----------------------------------------
     Column |%cpu : Cpu utilization per second.
     ________________________________________
     Section|proc_mem : process memory status, collect from
-        | /proc/[pid]/status file, usually the pid should
-        | automatically get from the server.getPidNum() function, but
-        | you can also replace the pid by the --proc-pid option
+           | /proc/[pid]/status file, usually the pid should
+           | automatically get from the server.getPidNum() function, but
+           | you can also replace the pid by the --proc-pid option
     ----------------------------------------
     Column |rss : Bytes for resident memory size of the process in.
     Column |vsz : Bytes for virtual memory size of the process in.
@@ -410,9 +412,9 @@ Support redis status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     ----------------------------------------
     Column |conns : Counts for connected clients.
     Column |receive : Number of connections accepted by the server per
-        | second.
+           | second.
     Column |reject : Number of connections rejected because of
-        | maxclients limit per second.
+           | maxclients limit per second.
     ________________________________________
     Section|client : redis client status, collect from 'info'
     ----------------------------------------
@@ -422,11 +424,11 @@ Support redis status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     Section|mem : redis memory usage, collect from 'info'
     ----------------------------------------
     Column |used : Total number of bytes allocated by Redis using its
-        | allocator (either standard libc, jemalloc, or an
-        | alternative allocator such as tcmalloc.
+           | allocator (either standard libc, jemalloc, or an
+           | alternative allocator such as tcmalloc.
     Column |rss : Number of bytes that Redis allocated as seen by the
-        | operating system (a.k.a resident set size). This is the
-        | number reported by tools such as top(1) and ps(1).
+           | operating system (a.k.a resident set size). This is the
+           | number reported by tools such as top(1) and ps(1).
     Column |peak : Peak memory consumed by Redis (in bytes).
     ________________________________________
     Section|net : redis network status, collect from 'info'
@@ -442,15 +444,15 @@ Support redis status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     Section|key : redis key status, collect from 'info'
     ----------------------------------------
     Column |hits : Count per second of successful lookup of keys in the
-        | main dictionary.
+           | main dictionary.
     Column |misses : Count per second of failed lookup of keys in the
-        | main dictionary.
+           | main dictionary.
     Column |expired : Number of key expiration events among one second.
     Column |evicted : Number of evicted keys due to maxmemory limit
-        | among one second.
+           | among one second.
     ________________________________________
     Section|command : redis command status, collect from 'info
-        | commandstat' and 'command'
+           | commandstat' and 'command'
     ----------------------------------------
     Column |cmds : Number of commands processed per second.
     Column |reads : Number of readonly commands processed per second.
@@ -465,12 +467,12 @@ Support redis status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     Section|repl : redis replication status, collect from 'info'
     ----------------------------------------
     Column |r : Value is 'M' if the instance is slave of no one(it is a
-        | master), or 'S' if the instance is enslaved to a master(it
-        | is a slave). Note that a slave can be master of another
-        | slave (daisy chaining).
+           | master), or 'S' if the instance is enslaved to a master(it
+           | is a slave). Note that a slave can be master of another
+           | slave (daisy chaining).
     Column |s/l : If the role is master, it means the number of
-        | connected slaves. If the role is slave, it means the status
-        | of the link (up/down)
+           | connected slaves. If the role is slave, it means the status
+           | of the link (up/down)
     ________________________________________
 
     
