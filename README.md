@@ -321,7 +321,7 @@ Support redis status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes
     ________________________________________
     
     
-### The follow is the mysql sections:
+### The follow is the redis sections instructions:
 
     $ python sss.py -T redis -I
     sss version 0.1.1
