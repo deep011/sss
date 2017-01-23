@@ -1167,7 +1167,7 @@ def redis_clean_for_server(server):
     return
 
 def redis_get_pidnum_for_server(server):
-    pid = server.redis.conn.info(server)["process_id"]
+    pid = server.redis_conn.info("server")["process_id"]
     return int(pid)
 
 redis_client_section = StatusSection("client", [
@@ -1177,12 +1177,22 @@ StatusColumn("BIBuf", 0, column_flags_bytes, field_handler_common, ["client_bigg
 ], [get_redis_status],
 "redis client status, collect from \'info\'")
 
+redis_mem_section = StatusSection("mem", [
+StatusColumn("used", 0, column_flags_bytes, field_handler_common, ["used_memory"], "Total number of bytes allocated by Redis using its allocator (either standard libc, jemalloc, or an alternative allocator such as tcmalloc."),
+StatusColumn("rss", 0, column_flags_bytes, field_handler_common, ["used_memory_rss"], "Number of bytes that Redis allocated as seen by the operating system (a.k.a resident set size). This is the number reported by tools such as top(1) and ps(1)."),
+StatusColumn("peak", 0, column_flags_bytes, field_handler_common, ["used_memory_peak"], "Peak memory consumed by Redis (in bytes)."),
+], [get_redis_status],
+"redis memory usage, collect from \'info\'")
+
 redis_sections = [
-redis_client_section
+redis_client_section,
+redis_mem_section
 ]
 
 redis_sections_to_show_default = [
 time_section,
+proc_cpu_section,
+redis_mem_section,
 redis_client_section
 ]
 
