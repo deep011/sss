@@ -1,6 +1,6 @@
 # sss
 
-**sss** (abbreviation "Show-Service-Status") is a convenient tool to Show the Service Status(Now only support for os and mysql).
+**sss** (abbreviation "Show-Service-Status") is a convenient tool to Show the Service Status(Now only support for os, mysql and redis).
 
 ## Usage
 
@@ -28,7 +28,8 @@
     
 ## Dependence
 
-Mysql need 'mysql-connector-python' package
+Mysql need [mysql-connector-python](https://dev.mysql.com/downloads/connector/python/) package
+Redis need [redis-py](https://github.com/andymccurdy/redis-py) package
 
 
 ## Run
