@@ -1282,10 +1282,10 @@ StatusColumn("writes", 0, column_flags_none, field_handler_common, ["redis_write
 ], [get_redis_command_status],
 "redis command status, collect from \'info commandstat\' and \'command\'")
 
-redis_persistence_section = StatusSection("persistence", [
-StatusColumn("ling", 1, column_flags_none, field_handler_common, ["loading"], "Flag indicating if the load of a dump file is on-going."),
-StatusColumn("ring", 1, column_flags_none, field_handler_common, ["rdb_bgsave_in_progress"], "Flag indicating a RDB save is on-going."),
-StatusColumn("aing", 1, column_flags_none, field_handler_common, ["aof_rewrite_in_progress"], "Flag indicating a AOF rewrite operation is on-going.")
+redis_persistence_section = StatusSection("persis", [
+StatusColumn("ln", 1, column_flags_none, field_handler_common, ["loading"], "Flag indicating if the load of a dump file is on-going."),
+StatusColumn("rn", 1, column_flags_none, field_handler_common, ["rdb_bgsave_in_progress"], "Flag indicating a RDB save is on-going."),
+StatusColumn("an", 1, column_flags_none, field_handler_common, ["aof_rewrite_in_progress"], "Flag indicating a AOF rewrite operation is on-going.")
 ], [get_redis_command_status],
 "redis persistence status, collect from \'info\'")
 
