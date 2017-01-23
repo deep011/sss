@@ -538,6 +538,44 @@ StatusColumn("%util", 1, column_flags_string, field_handler_common, ["os_disk_bu
 "os disk status, collect from /proc/diskstats file, you need to use --disk-name option "
 "to set the disk name that you want to monitor, the disk name is in the /proc/diskstats file")
 
+def get_os_mem_status(server, status):
+    file = open("/proc/meminfo", 'r')
+    line = file.readline().lstrip()
+    count = 4
+    while line:
+        if line.startswith("MemTotal"):
+            fields = line.split()
+            status["os_mem_total"] = long(fields[1])*1024
+            count -= 1
+        elif line.startswith("MemFree"):
+            fields = line.split()
+            status["os_mem_free"] = long(fields[1])*1024
+            count -= 1
+        elif line.startswith("Buffers"):
+            fields = line.split()
+            status["os_mem_buffers"] = long(fields[1])*1024
+            count -= 1
+        elif line.startswith("Cached"):
+            fields = line.split()
+            status["os_mem_cached"] = long(fields[1])*1024
+            count -= 1
+
+        if count == 0:
+            break;
+
+        line = file.readline().lstrip()
+
+    file.close()
+    return
+
+os_mem_section = StatusSection("os_mem", [
+StatusColumn("total", 0, column_flags_bytes, field_handler_common, ["os_mem_total"],"Total memory size bytes."),
+StatusColumn("free", 0, column_flags_bytes, field_handler_common, ["os_mem_free"],"Free memory size bytes."),
+StatusColumn("buffer", 0, column_flags_bytes, field_handler_common, ["os_mem_buffers"],"Buffered memory size bytes."),
+StatusColumn("cached", 0, column_flags_bytes, field_handler_common, ["os_mem_cached"],"Cached memory size bytes.")
+], [get_os_mem_status],
+"os memory status, collect from /proc/meminfo file")
+
 proc_pid = 0
 proc_pid_is_set = 0
 def get_proc_cpu_status(server, status):
@@ -610,6 +648,7 @@ os_swap_section,
 os_net_bytes_section,
 os_net_packages_section,
 os_disk_section,
+os_mem_section,
 proc_cpu_section,
 proc_mem_section
 ]
