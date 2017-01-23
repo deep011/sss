@@ -7,7 +7,8 @@ import sys
 
 type_os = "os"
 type_mysql = "mysql"
-support_types=[type_os,type_mysql]
+type_redis = "redis"
+support_types=[type_os,type_mysql,type_redis]
 
 service_type=type_os
 
@@ -1139,6 +1140,52 @@ mysql_net_section,
 mysql_threads_section
 ]
 
+####### Redis Implement #######
+def redis_connection_create():
+    import redis.connection
+    redis_conn = redis.StrictRedis(
+        host=host,
+        port=port,
+        password=password)
+    return redis_conn
+
+def redis_connection_destroy(conn):
+    return
+
+def get_redis_status(server, status):
+    redis_info = server.redis_conn.info()
+    for key in redis_info:
+        status[key] = redis_info[key]
+    return
+
+def redis_initialize_for_server(server):
+    server.redis_conn = redis_connection_create()
+    return
+
+def redis_clean_for_server(server):
+    redis_connection_destroy(server.redis_conn)
+    return
+
+def redis_get_pidnum_for_server(server):
+    pid = server.redis.conn.info(server)["process_id"]
+    return int(pid)
+
+redis_client_section = StatusSection("client", [
+StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["connected_clients"], "Counts for connected clients."),
+StatusColumn("LOList", 0, column_flags_none, field_handler_common, ["client_longest_output_list"], "Longest client output list length."),
+StatusColumn("BIBuf", 0, column_flags_bytes, field_handler_common, ["client_biggest_input_buf"], "Biggest client input buffer size in bytes.")
+], [get_redis_status],
+"redis client status, collect from \'info\'")
+
+redis_sections = [
+redis_client_section
+]
+
+redis_sections_to_show_default = [
+time_section,
+redis_client_section
+]
+
 ####### sss #######
 def usage():
     print 'python sss.py [options]'
@@ -1271,6 +1318,18 @@ if __name__ == "__main__":
                 server.addSectionToShow(section.getName())
         elif (len(sections_name) == 0):
             server.setDefaultSectionsToShow(mysql_sections_to_show_default)
+    elif (service_type == type_redis):
+        server = Server("Redis", service_type,
+                        redis_initialize_for_server,
+                        redis_clean_for_server,
+                        redis_get_pidnum_for_server,
+                        redis_sections)
+        if all_section == 1:
+            server.setDefaultSectionsToShow(common_sections)
+            for section in redis_sections:
+                server.addSectionToShow(section.getName())
+        elif (len(sections_name) == 0):
+            server.setDefaultSectionsToShow(redis_sections_to_show_default)
 
     if (instructions_show == 1):
         print_sections_instructions(server)
