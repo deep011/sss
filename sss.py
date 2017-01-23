@@ -1152,12 +1152,6 @@ def redis_connection_create():
 def redis_connection_destroy(conn):
     return
 
-def get_redis_status(server, status):
-    redis_info = server.redis_conn.info()
-    for key in redis_info:
-        status[key] = redis_info[key]
-    return
-
 def redis_initialize_for_server(server):
     server.redis_conn = redis_connection_create()
     return
@@ -1169,6 +1163,30 @@ def redis_clean_for_server(server):
 def redis_get_pidnum_for_server(server):
     pid = server.redis_conn.info("server")["process_id"]
     return int(pid)
+
+def get_redis_status(server, status):
+    redis_info = server.redis_conn.info()
+    for key in redis_info:
+        status[key] = redis_info[key]
+    return
+
+def field_handler_redis_keyspace(column, status):
+    keys_count = 0
+    expires_count = 0
+    for idx in range(10000):
+        if (status.has_key("db"+str(idx)) == False):
+            break;
+
+        db_message = status["db"+str(idx)]
+        keys_count += long(db_message["keys"])
+        expires_count += long(db_message["expires"])
+
+    if (column.getName() == "keys"):
+        return num2readable(keys_count)
+    elif (column.getName() == "expires"):
+        return num2readable(expires_count)
+
+    return "0"
 
 redis_client_section = StatusSection("client", [
 StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["connected_clients"], "Counts for connected clients."),
@@ -1190,10 +1208,17 @@ StatusColumn("out", 0, column_flags_bytes|column_flags_rate, field_handler_commo
 ], [get_redis_status],
 "redis network status, collect from \'info\'")
 
+redis_keyspace_section = StatusSection("keyspace", [
+StatusColumn("keys", 0, column_flags_none, field_handler_redis_keyspace, [], "Number of keys in all db."),
+StatusColumn("expires", 0, column_flags_none, field_handler_redis_keyspace, [], "Number of keys with an expiration in all db.")
+], [get_redis_status],
+"redis keyspace status, collect from \'info\'")
+
 redis_sections = [
 redis_client_section,
 redis_memory_section,
-redis_net_section
+redis_net_section,
+redis_keyspace_section
 ]
 
 redis_sections_to_show_default = [
@@ -1201,7 +1226,8 @@ time_section,
 proc_cpu_section,
 redis_memory_section,
 redis_net_section,
-redis_client_section
+redis_client_section,
+redis_keyspace_section
 ]
 
 ####### sss #######
