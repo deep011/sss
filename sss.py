@@ -1170,6 +1170,50 @@ def get_redis_status(server, status):
         status[key] = redis_info[key]
     return
 
+redis_command_attributes_flags_none=int('0000',2)  # None flags.
+redis_command_attributes_flags_write=int('0001',2)  # Write command flags.
+redis_command_attributes_flags_readonly=int('0010',2)  # Readonly command flags.
+cached_redis_command_details = 0
+def get_redis_command_status(server, status):
+    global cached_redis_command_details
+    if (cached_redis_command_details == 0):
+        cached_redis_command_details = 1
+        server.redis_commands_details = {}
+        server.redis_commands_calls = {}
+        redis_commands_info = server.redis_conn.execute_command("command")
+        for command_info in redis_commands_info:
+            command_name = command_info[0]
+            command_attributes = command_info[2]
+            if (server.redis_commands_details.has_key(command_name) == False):
+                server.redis_commands_details[command_name] = redis_command_attributes_flags_none
+            for attribute in command_attributes:
+                if (attribute == "readonly"):
+                    server.redis_commands_details[command_name] |= redis_command_attributes_flags_readonly
+                elif (attribute == "write"):
+                    server.redis_commands_details[command_name] |= redis_command_attributes_flags_write
+
+    readonly_commands_count = 0
+    write_commands_count = 0
+    redis_info_commandstats = server.redis_conn.info("commandstats")
+    for key in redis_info_commandstats:
+        calls = 0
+        if (server.redis_commands_calls.has_key(key)):
+            calls += redis_info_commandstats[key]["calls"] - server.redis_commands_calls[key]
+        else:
+            calls += redis_info_commandstats[key]["calls"]
+
+        server.redis_commands_calls[key] = redis_info_commandstats[key]["calls"]
+        command_name = key.split("_")[1]
+        if server.redis_commands_details[command_name] & redis_command_attributes_flags_readonly:
+            readonly_commands_count += calls
+        elif server.redis_commands_details[command_name] & redis_command_attributes_flags_write:
+            write_commands_count += calls
+
+    status["redis_readonly_commands_count"] = readonly_commands_count
+    status["redis_write_commands_count"] = write_commands_count
+
+    return
+
 def field_handler_redis_keyspace(column, status):
     keys_count = 0
     expires_count = 0
@@ -1228,13 +1272,21 @@ StatusColumn("evicted", 0, column_flags_rate, field_handler_common, ["evicted_ke
 ], [get_redis_status],
 "redis key status, collect from \'info\'")
 
+redis_command_section = StatusSection("command", [
+StatusColumn("cmds", 0, column_flags_rate, field_handler_common, ["total_commands_processed"], "Number of commands processed per second."),
+StatusColumn("reads", 0, column_flags_none, field_handler_common, ["redis_readonly_commands_count"], "Number of readonly commands processed per second."),
+StatusColumn("writes", 0, column_flags_none, field_handler_common, ["redis_write_commands_count"], "Number of write commands processed per second.")
+], [get_redis_status, get_redis_command_status],
+"redis command status, collect from \'info commandstat\' and \'command\'")
+
 redis_sections = [
 redis_connection_section,
 redis_client_section,
 redis_memory_section,
 redis_net_section,
 redis_keyspace_section,
-redis_key_section
+redis_key_section,
+redis_command_section
 ]
 
 redis_sections_to_show_default = [
