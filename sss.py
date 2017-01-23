@@ -1192,6 +1192,7 @@ def get_redis_command_status(server, status):
                 elif (attribute == "write"):
                     server.redis_commands_details[command_name] |= redis_command_attributes_flags_write
 
+    all_commands_count = 0
     readonly_commands_count = 0
     write_commands_count = 0
     redis_info_commandstats = server.redis_conn.info("commandstats")
@@ -1203,6 +1204,7 @@ def get_redis_command_status(server, status):
             calls += redis_info_commandstats[key]["calls"]
 
         server.redis_commands_calls[key] = redis_info_commandstats[key]["calls"]
+        all_commands_count += calls
         command_name = key.split("_")[1]
         if server.redis_commands_details[command_name] & redis_command_attributes_flags_readonly:
             readonly_commands_count += calls
@@ -1211,6 +1213,7 @@ def get_redis_command_status(server, status):
 
     status["redis_readonly_commands_count"] = readonly_commands_count
     status["redis_write_commands_count"] = write_commands_count
+    status["redis_all_commands_count"] = all_commands_count
 
     return
 
@@ -1273,10 +1276,10 @@ StatusColumn("evicted", 0, column_flags_rate, field_handler_common, ["evicted_ke
 "redis key status, collect from \'info\'")
 
 redis_command_section = StatusSection("command", [
-StatusColumn("cmds", 0, column_flags_rate, field_handler_common, ["total_commands_processed"], "Number of commands processed per second."),
+StatusColumn("cmds", 0, column_flags_none, field_handler_common, ["redis_all_commands_count"], "Number of commands processed per second."),
 StatusColumn("reads", 0, column_flags_none, field_handler_common, ["redis_readonly_commands_count"], "Number of readonly commands processed per second."),
 StatusColumn("writes", 0, column_flags_none, field_handler_common, ["redis_write_commands_count"], "Number of write commands processed per second.")
-], [get_redis_status, get_redis_command_status],
+], [get_redis_command_status],
 "redis command status, collect from \'info commandstat\' and \'command\'")
 
 redis_sections = [
