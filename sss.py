@@ -1282,6 +1282,13 @@ StatusColumn("writes", 0, column_flags_none, field_handler_common, ["redis_write
 ], [get_redis_command_status],
 "redis command status, collect from \'info commandstat\' and \'command\'")
 
+redis_persistence_section = StatusSection("persistence", [
+StatusColumn("ling", 1, column_flags_none, field_handler_common, ["loading"], "Flag indicating if the load of a dump file is on-going."),
+StatusColumn("ring", 1, column_flags_none, field_handler_common, ["rdb_bgsave_in_progress"], "Flag indicating a RDB save is on-going."),
+StatusColumn("aing", 1, column_flags_none, field_handler_common, ["aof_rewrite_in_progress"], "Flag indicating a AOF rewrite operation is on-going.")
+], [get_redis_command_status],
+"redis persistence status, collect from \'info\'")
+
 redis_sections = [
 redis_connection_section,
 redis_client_section,
@@ -1289,7 +1296,8 @@ redis_memory_section,
 redis_net_section,
 redis_keyspace_section,
 redis_key_section,
-redis_command_section
+redis_command_section,
+redis_persistence_section
 ]
 
 redis_sections_to_show_default = [
