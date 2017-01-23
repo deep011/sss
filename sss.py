@@ -1214,11 +1214,20 @@ StatusColumn("expires", 0, column_flags_none, field_handler_redis_keyspace, [], 
 ], [get_redis_status],
 "redis keyspace status, collect from \'info\'")
 
+redis_key_section = StatusSection("key", [
+StatusColumn("hits", 0, column_flags_rate, field_handler_common, ["keyspace_hits"], "Count per second of successful lookup of keys in the main dictionary."),
+StatusColumn("misses", 0, column_flags_rate, field_handler_common, ["keyspace_misses"], "Count per second of failed lookup of keys in the main dictionary."),
+StatusColumn("expired", 0, column_flags_rate, field_handler_common, ["expired_keys"], "Number of key expiration events among one second."),
+StatusColumn("evicted", 0, column_flags_rate, field_handler_common, ["evicted_keys"], "Number of evicted keys due to maxmemory limit among one second.")
+], [get_redis_status],
+"redis key status, collect from \'info\'")
+
 redis_sections = [
 redis_client_section,
 redis_memory_section,
 redis_net_section,
-redis_keyspace_section
+redis_keyspace_section,
+redis_key_section
 ]
 
 redis_sections_to_show_default = [
@@ -1226,8 +1235,7 @@ time_section,
 proc_cpu_section,
 redis_memory_section,
 redis_net_section,
-redis_client_section,
-redis_keyspace_section
+redis_client_section
 ]
 
 ####### sss #######
