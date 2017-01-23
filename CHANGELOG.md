@@ -1,3 +1,8 @@
+### 0.1.1 - Jan 23, 2017
+
+* Support 'os_mem' section for os type. (deep011)
+* Change the columns width for os_disk section. (deep011)
+
 ### 0.1.0 - Jan 17, 2017
 
 This is the sss first release. sss is used to show a service status, and it is developed in template. User can easily support the service, monitor sections and columns.
