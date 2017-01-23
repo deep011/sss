@@ -145,7 +145,7 @@ class StatusColumn:
         if (blanks > 0):   # Blanks is bigger than zero means we really want the blanks.
             self.width = len(name) + blanks
         elif (blanks == 0):   # Blanks is zero means the default blanks count between the columns, default is 2.
-            self.width = len(name) + 2
+            self.width = len(name) + 1
             if (self.width < 8):
                 self.width = 8
         else:
