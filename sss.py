@@ -1308,7 +1308,7 @@ StatusColumn("an", 1, column_flags_none, field_handler_common, ["aof_rewrite_in_
 "redis persistence status, collect from \'info\'")
 
 redis_replication_section = StatusSection("repl", [
-StatusColumn("r", 1, column_flags_string, field_handler_redis_replication, ["role"], "Value is \'m\' if the instance is slave of no one(it is a master), or \'s\' if the instance is enslaved to a master(it is a slave). Note that a slave can be master of another slave (daisy chaining)."),
+StatusColumn("r", 1, column_flags_string, field_handler_redis_replication, ["role"], "Value is \'M\' if the instance is slave of no one(it is a master), or \'S\' if the instance is enslaved to a master(it is a slave). Note that a slave can be master of another slave (daisy chaining)."),
 StatusColumn("s/l", 2, column_flags_string, field_handler_redis_replication, ["connected_slaves","master_link_status"], "If the role is master, it means the number of connected slaves. If the role is slave, it means the status of the link (up/down)")
 ], [get_redis_status],
 "redis replication status, collect from \'info\'")
