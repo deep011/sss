@@ -1235,6 +1235,24 @@ def field_handler_redis_keyspace(column, status):
 
     return "0"
 
+def field_handler_redis_replication(column, status):
+    if status["role"] == "master":
+        role = "M"
+        slaves_count = status["connected_slaves"]
+    elif status["role"] == "slave":
+        role = "S"
+        link_status = status["master_link_status"]
+
+    if column.getName() == "r":
+        return role
+    elif column.getName() == "s/l":
+        if role == "M":
+            return slaves_count
+        elif role == "S":
+            return link_status
+
+    return ""
+
 redis_connection_section = StatusSection("connection", [
 StatusColumn("conns", 0, column_flags_none, field_handler_common, ["connected_clients"], "Counts for connected clients."),
 StatusColumn("receive", 0, column_flags_rate, field_handler_common, ["total_connections_received"], "Number of connections accepted by the server per second."),
@@ -1286,8 +1304,14 @@ redis_persistence_section = StatusSection("persis", [
 StatusColumn("ln", 1, column_flags_none, field_handler_common, ["loading"], "Flag indicating if the load of a dump file is on-going."),
 StatusColumn("rn", 1, column_flags_none, field_handler_common, ["rdb_bgsave_in_progress"], "Flag indicating a RDB save is on-going."),
 StatusColumn("an", 1, column_flags_none, field_handler_common, ["aof_rewrite_in_progress"], "Flag indicating a AOF rewrite operation is on-going.")
-], [get_redis_command_status],
+], [get_redis_status],
 "redis persistence status, collect from \'info\'")
+
+redis_replication_section = StatusSection("repl", [
+StatusColumn("r", 1, column_flags_string, field_handler_redis_replication, ["role"], "Value is \'m\' if the instance is slave of no one(it is a master), or \'s\' if the instance is enslaved to a master(it is a slave). Note that a slave can be master of another slave (daisy chaining)."),
+StatusColumn("s/l", 2, column_flags_string, field_handler_redis_replication, ["connected_slaves","master_link_status"], "If the role is master, it means the number of connected slaves. If the role is slave, it means the status of the link (up/down)")
+], [get_redis_status],
+"redis replication status, collect from \'info\'")
 
 redis_sections = [
 redis_connection_section,
@@ -1297,7 +1321,8 @@ redis_net_section,
 redis_keyspace_section,
 redis_key_section,
 redis_command_section,
-redis_persistence_section
+redis_persistence_section,
+redis_replication_section
 ]
 
 redis_sections_to_show_default = [
