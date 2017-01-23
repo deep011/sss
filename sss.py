@@ -1163,7 +1163,7 @@ def usage():
     print '--proc-pid: set the process pid number for proc_* sections, default is 0'
 
 def version():
-    return '0.1.0'
+    return '0.1.1'
 
 def print_version():
     print "sss version " + version()
