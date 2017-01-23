@@ -1188,8 +1188,14 @@ def field_handler_redis_keyspace(column, status):
 
     return "0"
 
+redis_connection_section = StatusSection("connection", [
+StatusColumn("conns", 0, column_flags_none, field_handler_common, ["connected_clients"], "Counts for connected clients."),
+StatusColumn("receive", 0, column_flags_rate, field_handler_common, ["total_connections_received"], "Number of connections accepted by the server per second."),
+StatusColumn("reject", 0, column_flags_rate, field_handler_common, ["rejected_connections"], "Number of connections rejected because of maxclients limit per second.")
+], [get_redis_status],
+"redis connection status, collect from \'info\'")
+
 redis_client_section = StatusSection("client", [
-StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["connected_clients"], "Counts for connected clients."),
 StatusColumn("LOList", 0, column_flags_none, field_handler_common, ["client_longest_output_list"], "Longest client output list length."),
 StatusColumn("BIBuf", 0, column_flags_bytes, field_handler_common, ["client_biggest_input_buf"], "Biggest client input buffer size in bytes.")
 ], [get_redis_status],
@@ -1223,6 +1229,7 @@ StatusColumn("evicted", 0, column_flags_rate, field_handler_common, ["evicted_ke
 "redis key status, collect from \'info\'")
 
 redis_sections = [
+redis_connection_section,
 redis_client_section,
 redis_memory_section,
 redis_net_section,
@@ -1235,7 +1242,7 @@ time_section,
 proc_cpu_section,
 redis_memory_section,
 redis_net_section,
-redis_client_section
+redis_connection_section
 ]
 
 ####### sss #######
