@@ -2,7 +2,7 @@
 
 **sss** (abbreviation "Show-Service-Status") is a convenient tool to Show the Service Status.
 
-By now, sss support for os(linux), mysql and redis.
+By now, sss support for os(linux), mysql, redis and memcached.
 
 ## Usage
 
@@ -30,9 +30,9 @@ By now, sss support for os(linux), mysql and redis.
     
 ## Dependence
 
-Mysql need [mysql-connector-python](https://dev.mysql.com/downloads/connector/python/) package
+Mysql need [mysql-connector-python](https://dev.mysql.com/downloads/connector/python/)
 
-Redis need [redis-py](https://github.com/andymccurdy/redis-py) package
+Redis need [redis-py](https://github.com/andymccurdy/redis-py)
 
 Memcached need [python-memcached](https://github.com/linsomniac/python-memcached)
 
