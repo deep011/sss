@@ -1368,13 +1368,21 @@ StatusColumn("receive", 0, column_flags_rate, field_handler_common, ["total_conn
 ], [get_memcached_status],
 "memcached connection status, collect from \'stats\'")
 
+memcached_net_section = StatusSection("net", [
+StatusColumn("in", 0, column_flags_bytes|column_flags_rate, field_handler_common, ["bytes_read"], "Bytes per second received into memcached."),
+StatusColumn("out", 0, column_flags_bytes|column_flags_rate, field_handler_common, ["bytes_written"], "Bytes per second sent by memcached.")
+], [get_memcached_status],
+"memcached network status, collect from \'stats\'")
+
 memcached_sections = [
-memcached_connection_section
+memcached_connection_section,
+memcached_net_section
 ]
 
 memcached_sections_to_show_default = [
 time_section,
-memcached_connection_section
+memcached_connection_section,
+memcached_net_section
 ]
 
 ####### sss #######
