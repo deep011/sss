@@ -1,3 +1,7 @@
+### 0.2.0 - Jan 24, 2017
+
+* Support show the Redis status, such as 'connection','client','mem','net','keyspace','key','command','persis','repl'. (deep011)
+
 ### 0.1.1 - Jan 23, 2017
 
 * Support 'os_mem' section for os type. (deep011)
