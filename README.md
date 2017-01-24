@@ -34,6 +34,8 @@ Mysql need [mysql-connector-python](https://dev.mysql.com/downloads/connector/py
 
 Redis need [redis-py](https://github.com/andymccurdy/redis-py) package
 
+Memcached need [python-memcached](https://github.com/linsomniac/python-memcached)
+
 
 ## Run
     

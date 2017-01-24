@@ -8,7 +8,8 @@ import sys
 type_os = "os"
 type_mysql = "mysql"
 type_redis = "redis"
-support_types=[type_os,type_mysql,type_redis]
+type_memcached = "memcached"
+support_types=[type_os,type_mysql,type_redis,type_memcached]
 
 service_type=type_os
 
@@ -1333,6 +1334,49 @@ redis_net_section,
 redis_connection_section
 ]
 
+####### Memcached Implement #######
+def memcached_connection_create():
+    import memcache
+    address = host + ":" + str(port)
+    mc_conn = memcache.Client([address]);
+    return mc_conn
+
+def memcached_connection_destroy(conn):
+    return
+
+def memcached_initialize_for_server(server):
+    server.mc_conn = memcached_connection_create()
+    return
+
+def memcached_clean_for_server(server):
+    memcached_connection_destroy(server.mc_conn)
+    return
+
+def memcached_get_pidnum_for_server(server):
+    pid = server.mc_conn.get_stats()[0][1]["pid"]
+    return int(pid)
+
+def get_memcached_status(server, status):
+    memcached_info = server.mc_conn.get_stats()[0][1]
+    for key in memcached_info:
+        status[key] = memcached_info[key]
+    return
+
+memcached_connection_section = StatusSection("connection", [
+StatusColumn("conns", 0, column_flags_none, field_handler_common, ["curr_connections"], "Counts for connected clients."),
+StatusColumn("receive", 0, column_flags_rate, field_handler_common, ["total_connections"], "Number of connections accepted by the server per second.")
+], [get_memcached_status],
+"memcached connection status, collect from \'stats\'")
+
+memcached_sections = [
+memcached_connection_section
+]
+
+memcached_sections_to_show_default = [
+time_section,
+memcached_connection_section
+]
+
 ####### sss #######
 def usage():
     print 'python sss.py [options]'
@@ -1477,6 +1521,18 @@ if __name__ == "__main__":
                 server.addSectionToShow(section.getName())
         elif (len(sections_name) == 0):
             server.setDefaultSectionsToShow(redis_sections_to_show_default)
+    elif (service_type == type_memcached):
+        server = Server("Memcached", service_type,
+                        memcached_initialize_for_server,
+                        memcached_clean_for_server,
+                        memcached_get_pidnum_for_server,
+                        memcached_sections)
+        if all_section == 1:
+            server.setDefaultSectionsToShow(common_sections)
+            for section in memcached_sections:
+                server.addSectionToShow(section.getName())
+        elif (len(sections_name) == 0):
+            server.setDefaultSectionsToShow(memcached_sections_to_show_default)
 
     if (instructions_show == 1):
         print_sections_instructions(server)
