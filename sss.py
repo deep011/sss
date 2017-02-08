@@ -18,7 +18,8 @@ output_file_name = ""
 output_file = None
 output_file_by_day = 0
 date_format = "%Y-%m-%d"
-current_day = str(time.strftime(date_format, time.localtime()))
+time_format = "%H:%M:%S"
+current_day = datetime.datetime.now().strftime(date_format)
 
 host="127.0.0.1"
 port=3306
@@ -83,9 +84,9 @@ def output(content):
 
     return
 
-def separate_output_file_if_needed():
+def separate_output_file_if_needed(server):
     if (output_file_by_day == 1):
-        today = str(time.strftime(date_format, time.localtime()))
+        today = server.current_time.strftime(date_format)
         global current_day
         global output_file
         if current_day != today:
@@ -171,15 +172,17 @@ class StatusColumn:
     def getHeader(self):
         return column_format % (self.getWidth(), self.getName())
 
-    def getValue(self, column, status):
-        return column.field_handler(column, status)
+    def getValue(self, column, status, server):
+        return column.field_handler(column, status, server)
 
     def setValueOld(self, value):
         self.value_old = value
     def setObjOld(self, obj):
         self.obj_old = obj
 
-def field_handler_common(column, status):
+## interval_time is microsecond
+## The caller need to catch the exception
+def field_handler_common(column, status, server):
     if (column.getFlags()&column_flags_ratio):
         fields = column.getFields()
         return "%.3f%%"%(float(status[fields[0]])*100/float(status[fields[1]]))
@@ -196,13 +199,14 @@ def field_handler_common(column, status):
             value_num += long(status[field])
 
     if (column.getFlags()&column_flags_rate):
-        rate = value_num - column.getValueOld()
+        interval_time = microsecond_differ_by_datetime(server.current_time,server.last_time)
+        if (interval_time <=0):
+            interval_time = 1
+
+        difference_value = value_num - column.getValueOld()
         column.setValueOld(value_num)
-        if (interval > 1):
-            rate = float(rate)/interval
-            value_str = "%3.1f"%rate
-        else:
-            value_str = str(rate)
+        rate = float(difference_value) * 1000000 / float(interval_time)
+        value_str = "%3.1f" % rate
     else:
         if (column.getFlags()&column_flags_string == 0):
             value_str = str(value_num)
@@ -214,11 +218,22 @@ def field_handler_common(column, status):
 
     return value_str
 
-def get_status_line(sections, status):
+def get_status_line(server):
     line = ""
-    for section in sections:
+    for section in server.sections_to_show:
+        if (server.err > 0):
+            break
+
         for column in section.getColumns():
-            line += column_format % (column.getWidth(), column.getValue(column, status))
+            if (server.err > 0):
+                break
+
+            try:
+                line += column_format % (column.getWidth(),column.getValue(column,server.status,server))
+            except Exception, e:
+                server.err = 1
+                server.errmsg = e.message
+
         line += '|'
     return line
 
@@ -318,8 +333,9 @@ def get_section_instructions(section):
 
     return section_instructions
 
-def field_handler_time(column, status):
-    return column_format % (9, time.strftime("%H:%M:%S", time.localtime()))
+## The caller need to catch the exception
+def field_handler_time(column, status, server):
+    return server.getCurrentTimeFormattedString()
 
 time_section = StatusSection("time", [
 StatusColumn("Time", 5, column_flags_string, field_handler_time, [], "Show the time when the status display.")
@@ -341,7 +357,8 @@ def get_os_cpu_status(server, status):
 
     return
 
-def field_handler_os_cpu(column, status):
+## The caller need to catch the exception
+def field_handler_os_cpu(column, status, server):
     fields = column.getFields()
     value = status[fields[0]]
     total = status[fields[1]]
@@ -584,10 +601,21 @@ def get_proc_cpu_status(server, status):
     global proc_pid_is_set
     global proc_pid
     if (proc_pid_is_set == 0):
-        proc_pid_is_set = 1
         proc_pid = server.getPidNum(server)
+        if server.err == 1:
+            return
 
-    file = open("/proc/"+str(proc_pid)+"/stat", 'r')
+        proc_pid_is_set = 1
+
+    try:
+        filename = "/proc/"+str(proc_pid)+"/stat"
+        file = open(filename, 'r')
+    except IOError, e:
+        server.err = 1
+        server.errmsg = "Error can not open file: " + filename
+        proc_pid_is_set = 0 # Need get the proc pid next time.
+        return
+
     line = file.readline()
     file.close()
 
@@ -610,10 +638,21 @@ def get_proc_mem_status(server, status):
     global proc_pid_is_set
     global proc_pid
     if (proc_pid_is_set == 0):
-        proc_pid_is_set = 1
         proc_pid = server.getPidNum(server)
+        if server.err == 1:
+            return
 
-    file = open("/proc/"+str(proc_pid)+"/status", 'r')
+        proc_pid_is_set = 1
+
+    try:
+        filename = "/proc/"+str(proc_pid)+"/status"
+        file = open(filename, 'r')
+    except IOError, e:
+        server.err = 1
+        server.errmsg = "Error can not open file: " + filename
+        proc_pid_is_set = 0 # Need get the proc pid next time.
+        return
+
     line = file.readline()
 
     count = 0
@@ -677,6 +716,11 @@ class Server:
         self.header_sections = ""
         self.header_columns = ""
         self.status = {}
+        self.last_time = datetime.datetime.utcnow() # microsecond
+        self.current_time = datetime.datetime.utcnow() # microsecond
+        self.err = 0
+        self.errmsg = ""
+        self.need_reinit = 0
 
     def getName(self):
         return self.name
@@ -684,12 +728,22 @@ class Server:
     def getType(self):
         return self.type
 
+    def getCurrentTimeFormattedString(self):
+        return column_format % (9, self.current_time.strftime(time_format))
+
     def getPidNum(self, server):
         if (self.getPidNumHandler == None):
             print "Please set the process pid number"
             sys.exit(3)
 
-        return self.getPidNumHandler(server)
+        try:
+            pid_num = self.getPidNumHandler(server)
+        except Exception, e:
+            server.err = 1
+            server.errmsg = e.message
+            pid_num = -1
+
+        return pid_num
 
     def getSupportedSections(self):
         sections = []
@@ -816,7 +870,14 @@ class Server:
 
     def getStatus(self):
         for func in self.status_get_funcs:
-            func[0](self,self.status)
+            if (self.err == 1):
+                break
+
+            try:
+                func[0](self,self.status)
+            except Exception, e:
+                self.err = 1
+                self.errmsg = e.message
 
         return
 
@@ -826,21 +887,49 @@ class Server:
 
         # Init the first status
         self.getStatus()
-        get_status_line(self.sections_to_show, self.status)
+        get_status_line(self)
 
-        counter = 0
+        counter = -1
         while (1):
+            counter += 1
             time.sleep(interval)
             self.status.clear()
 
-            if (separate_output_file_if_needed() == 1 or counter % 10 == 0):
+            # update the server time
+            self.last_time = self.current_time
+            self.current_time = datetime.datetime.utcnow()
+
+            if (separate_output_file_if_needed(self) == 1 or counter % 10 == 0):
                 output(self.header_sections)
                 output(self.header_columns)
+                if (counter > 0):
+                    counter = 0
+
+            if (self.err > 0):
+                self.err = 0
+                try:
+                    self.clean(self)
+                    self.initialize(self)
+                    self.need_reinit = 1
+                except Exception, e:
+                    self.err = 1
+                    self.errmsg = e.message
+                    output(self.getCurrentTimeFormattedString() + " " + self.errmsg)
+                    continue
+
+                # Reinit the first status
+                self.getStatus()
+                get_status_line(self)
+                time.sleep(0.1)
+                self.need_reinit = 0
 
             self.getStatus()
-            output(get_status_line(self.sections_to_show, self.status))
+            status_line = get_status_line(self)
+            if (self.err > 0):
+                output(self.getCurrentTimeFormattedString()+" "+self.errmsg)
+                continue
 
-            counter += 1
+            output(status_line)
 
         return
 
@@ -865,6 +954,7 @@ def put_mysql_handler(handler):
     handler.close()
     return
 
+## The caller need to catch the exception
 def get_mysql_status(server, status):
     query= "show global status"
     server.cursor.execute(query)
@@ -872,6 +962,7 @@ def get_mysql_status(server, status):
         status[variable_name] = value
     return
 
+## The caller need to catch the exception
 def get_slave_status(server, status):
     query= "show slave status"
     server.cursor.execute(query)
@@ -935,6 +1026,7 @@ def parse_innodb_status(innodb_status, status):
 
     return
 
+## The caller need to catch the exception
 def get_innodb_status(server, status):
     query= "show engine innodb status"
     server.cursor.execute(query)
@@ -945,16 +1037,19 @@ def get_innodb_status(server, status):
 
     return
 
+## The caller need to catch the exception
 def mysql_initialize_for_server(server):
     server.conn = mysql_connection_create()
     server.cursor = get_mysql_handler(server.conn)
     return
 
+## The caller need to catch the exception
 def mysql_clean_for_server(server):
     put_mysql_handler(server.cursor)
     mysql_connection_destroy(server.conn)
     return
 
+## The caller need to catch the exception
 def mysql_get_pidnum_for_server(server):
     query = "show global variables like 'pid_file'"
     server.cursor.execute(query)
@@ -1144,39 +1239,53 @@ mysql_threads_section
 ####### Redis Implement #######
 def redis_connection_create():
     import redis.connection
-    redis_conn = redis.StrictRedis(
-        host=host,
-        port=port,
-        password=password)
+    try:
+        redis_conn = redis.StrictRedis(
+            host=host,
+            port=port,
+            password=password)
+    except Exception,e:
+        server.err = 1
+        server.errmsg = e.message
+
     return redis_conn
 
 def redis_connection_destroy(conn):
     return
 
+## The caller need to catch the exception
 def redis_initialize_for_server(server):
     server.redis_conn = redis_connection_create()
     return
 
+## The caller need to catch the exception
 def redis_clean_for_server(server):
     redis_connection_destroy(server.redis_conn)
     return
 
+## The caller need to catch the exception
 def redis_get_pidnum_for_server(server):
     pid = server.redis_conn.info("server")["process_id"]
     return int(pid)
 
+## The caller need to catch the exception
 def get_redis_status(server, status):
     redis_info = server.redis_conn.info()
     for key in redis_info:
         status[key] = redis_info[key]
+
     return
 
 redis_command_attributes_flags_none=int('0000',2)  # None flags.
 redis_command_attributes_flags_write=int('0001',2)  # Write command flags.
 redis_command_attributes_flags_readonly=int('0010',2)  # Readonly command flags.
 cached_redis_command_details = 0
+## The caller need to catch the exception
 def get_redis_command_status(server, status):
     global cached_redis_command_details
+    if (server.need_reinit == 1):
+        cached_redis_command_details = 0
+
     if (cached_redis_command_details == 0):
         cached_redis_command_details = 1
         server.redis_commands_details = {}
@@ -1218,7 +1327,8 @@ def get_redis_command_status(server, status):
 
     return
 
-def field_handler_redis_keyspace(column, status):
+## The caller need to catch the exception
+def field_handler_redis_keyspace(column, status, server):
     keys_count = 0
     expires_count = 0
     for idx in range(10000):
@@ -1236,7 +1346,8 @@ def field_handler_redis_keyspace(column, status):
 
     return "0"
 
-def field_handler_redis_replication(column, status):
+## The caller need to catch the exception
+def field_handler_redis_replication(column, status, server):
     if status["role"] == "master":
         role = "M"
         slaves_count = status["connected_slaves"]
@@ -1344,18 +1455,22 @@ def memcached_connection_create():
 def memcached_connection_destroy(conn):
     return
 
+## The caller need to catch the exception
 def memcached_initialize_for_server(server):
     server.mc_conn = memcached_connection_create()
     return
 
+## The caller need to catch the exception
 def memcached_clean_for_server(server):
     memcached_connection_destroy(server.mc_conn)
     return
 
+## The caller need to catch the exception
 def memcached_get_pidnum_for_server(server):
     pid = server.mc_conn.get_stats()[0][1]["pid"]
     return int(pid)
 
+## The caller need to catch the exception
 def get_memcached_status(server, status):
     memcached_info = server.mc_conn.get_stats()[0][1]
     for key in memcached_info:
@@ -1575,13 +1690,21 @@ if __name__ == "__main__":
 
     # Init the server if needed.
     if (server.initialize != None):
-        server.initialize(server)
+        try:
+            server.initialize(server)
+        except Exception, e:
+            server.err = 1
+            server.errmsg = e.message
 
     server.showStatus()
 
     # Clean the server if needed.
     if (server.clean != None):
-        server.clean(server)
+        try:
+            server.clean(server)
+        except Exception, e:
+            server.err = 1
+            server.errmsg = e.message
 
     if (output_type == 1 and output_file.closed == False):
         output_file.close()
