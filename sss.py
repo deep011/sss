@@ -527,30 +527,35 @@ def extract_section_name_and_columns_name_from_section_part(section_part):
 #sections part maybe like "section1_name,section2_name[column1_name,column2_name,column3_name],section3_name[all_columns]"
 def split_section_name_from_sections_part(sections_part):
     sections_name = []
-    start=0
-    end = len(sections_part)-1
-    idx = -1
-    while start < end:
-        try:
-            idx = sections_part.index("],",start,end)
-        except Exception, e:
-            idx = start
-            break
+    cursor=len(sections_part)
+    while cursor > 0:
+        if sections_part[cursor-1:cursor] == "]":
+            try:
+                idx = sections_part.rindex("[", 0, cursor)
+            except Exception, e:
+                return None
 
-        if idx <= 0 or idx >= end:
-            return None
+            if sections_part.rfind(",", 0, idx) < 0:
+                sections_name.append(sections_part[0:cursor])
+                sections_name.reverse()
+                return sections_name
 
-        section_name = sections_part[start:idx+1]
-        sections_name.append(section_name)
-        start = idx + 2
+            idx_sub = sections_part.rindex(",", 0, idx)
+            sections_name.append(sections_part[idx_sub+1:cursor])
+            cursor = idx_sub
+            continue
+        else:
+            if sections_part.rfind(",", 0, cursor) < 0:
+                sections_name.append(sections_part[0:cursor])
+                sections_name.reverse()
+                return sections_name
 
-    if idx < 0:
-        return None
-    elif idx < end:
-        section_name = sections_part[idx:end+1]
-        sections_name.append(section_name)
+            idx = sections_part.rindex(",", 0, cursor)
+            sections_name.append(sections_part[idx + 1:cursor])
+            cursor = idx
+            continue
 
-    return sections_name
+    return None
 
 ## The caller need to catch the exception
 def field_handler_time(column, status, server):
@@ -1871,10 +1876,19 @@ if __name__ == "__main__":
                 all_section = 1
             else:
                 sections_name = split_section_name_from_sections_part(arg)
+                if sections_name == None:
+                    print "Section '%s' is not supported" % (arg)
+                    sys.exit(3)
         elif opt in ('-a'):
             sections_name_addition = split_section_name_from_sections_part(arg)
+            if sections_name_addition == None:
+                print "Section '%s' is not supported" % (arg)
+                sys.exit(3)
         elif opt in ('-d'):
             sections_name_removed = split_section_name_from_sections_part(arg)
+            if sections_name_removed == None:
+                print "Section '%s' is not supported" % (arg)
+                sys.exit(3)
         elif opt in ('-o'):
             output_type = 1
             output_file_name = arg
