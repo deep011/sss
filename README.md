@@ -58,7 +58,7 @@ Show the os status, the follow is only the default sections to show, you can use
     
     $ python sss.py -T os --net-face=eth0 --disk-name=vdc
     --time--- -------os_cpu------- ------------------------os_disk------------------------ --os_net_bytes-- --os_swap--- 
-         Time|  usr  sys  idl  iow|   Reads  Writes  RBytes  WBytes Queue Wait STime %util|      In     Out|    si    so|
+         Time|  usr  sys  idl  iow|   reads  writes  rbytes  wbytes queue wait stime %util|      in     out|    si    so|
      12:05:37| 14.3  9.4 74.3  1.9|    11.0   337.4   43.9K   30.8M   2.2  6.4   2.9  99.8|  391.3K  843.7K|     0     0|
      12:05:38| 13.7  8.7 75.8  1.8|    13.0   349.6   51.9K   27.8M   2.2  6.0   2.7  99.5|  417.7K  906.4K|     8     0|
      12:05:39| 12.7  7.5 75.6  4.3|     8.0   301.7   32.0K   29.1M   2.3  7.4   3.2  98.8|  319.1K  729.7K|     0     0|
@@ -77,6 +77,26 @@ Unit [k,m,g,t] means it is number. 1t=1000g 1g=1000m 1m=1000k 1k=1000
 Unit [K,M,G,T] means it is bytes. 1T=1024G 1G=1024M 1M=1024K 1K=1024bytes
 
 ## Customize the status sections
+
+### You can use -s -a -d options to customize the status sections and columns.
+
+If you want only display 'Reads', 'Writes', 'RBytes' and 'WBytes' columns of the 'os_disk' section, you can use "-s os_disk[Reads,Writes,RBytes,WBytes]" option.
+
+    $ python sss.py -s os_disk[reads,writes,rbytes,wbytes]
+    --time--- --------------cmds--------------- -------net------- -------------threads_conns-------------- 
+         Time|  TPs   QPs  DPs  IPs  UPs  DIUPs|   NetIn   NetOut|  Run  Create  Cache  Conns   Try  Abort|
+     22:24:19|   17    15    0   29    1     30|   39.2K   220.0K|    6       0      7    229    45      0|
+     22:24:20|   22    33    0   34    3     37|   63.1K   271.7K|   13       0      7    229   147      0|
+     22:24:21|   46    57    0   50    7     57|   82.6K   302.6K|    5       0      7    229   123      0|
+     22:24:22|    8     3    0   16    1     17|   27.1K   120.1K|    4       0      7    229    61      0|
+     22:24:23|   52     8    0   94    1     95|   44.4K   122.3K|    2       0      7    229    76      0|
+     22:24:24|   39     4    0   79    0     79|   42.6K   113.5K|    5       0      7    229   111      0|
+     22:24:25|   16     6    0   37    1     38|   25.2K   124.6K|    2       0      7    229    41      0|
+     22:24:26|    9     5    0   17    1     18|   38.0K   183.6K|    4       0      7    229   126      0|
+     
+The -a -d options are also same format as the -s option like the above.
+
+### All the supported sections:
 
 Support os status sections: 'time','os_cpu','os_load','os_swap','os_net_bytes','os_net_packages','os_disk','os_mem','proc_cpu','proc_mem'
 

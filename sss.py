@@ -101,22 +101,197 @@ def separate_output_file_if_needed(server):
 
 ####### Class StatusSection #######
 class StatusSection:
-    def __init__(self, name, columns, status_get_functions, instructions):
+    def __init__(self, name, columns, status_get_functions, default_columns_name_show, instructions):
         self.name = name
-        self.columns = columns
+        self.columns = columns  #This section supported columns. This is a array of column.
         self.status_get_functions = status_get_functions
+        self.default_columns_show = []
+        self.columns_show = []    #Columns to show that in the self.columns. This is a array of column.
         self.instructions = instructions
+
+        if default_columns_name_show == None or len(default_columns_name_show) == 0:
+            self.default_columns_show = self.columns
+        elif len(default_columns_name_show) == 1 and default_columns_name_show[0] == ALL_COLUMNS:
+            self.default_columns_show = self.columns
+        else:
+            for column_name in  default_columns_name_show:
+                for column in self.columns:
+                    if (column_name == column.getName()):
+                        self.default_columns_show.append(column)
+
+            if len(self.default_columns_show) != len(default_columns_name_show):
+                print "There are not supported columns name in the section initialization"
+                sys.exit(3)
 
     def getName(self):
         return self.name
     def getColumns(self):
         return self.columns
+    def getColumnsToShow(self):
+        return self.columns_show
     def getInstructions(self):
         return self.instructions
 
+    def clearColumnsToShow(self):
+        self.columns_show = []
+        return
+
+    def addColumnToShow(self,column_in):
+        for column_show in self.columns_show:
+            if (column_show.getName() == column_in.getName()):
+                return 0
+
+        for column in self.columns:
+            if (column.getName() == column_in.getName()):
+                self.columns_show.append(column)
+                return 1
+
+        return -1
+
+    def addColumnsToShow(self,columns):
+        for column_in in columns:
+            find = 0
+            for column in self.columns:
+                if column_in.getName() == column.getName():
+                    find = 1
+                    break
+            if find == 0:
+                return -1   #There are not supported columns in the columns_name
+
+        count = 0
+        for column_in in columns:
+            ret = self.addColumnToShow(column_in)
+            count += ret
+
+        if count == len(columns):
+            return 2    #All columns in the columns_name are added.
+        elif count > 0:
+            return 1    #Some columns are not added.
+        else:
+            return 0    #No column was added.
+
+    def addColumnToShowByName(self,column_name):
+        for column in self.columns_show:
+            if (column_name == column.getName()):
+                return 0
+        for column in self.columns:
+            if (column_name == column.getName()):
+                self.columns_show.append(column)
+                return 1
+        return -1
+
+    def addColumnsToShowByName(self,columns_name):
+        #Check all the columns name are corrent?
+        for column_name in columns_name:
+            find = 0
+            for column in self.columns:
+                if (column_name == column.getName()):
+                    find = 1
+                    break
+
+            if find == 0:
+                return -1   #There are not supported columns in the columns_name.
+
+        count = 0
+        for column_name in columns_name:
+            ret = self.addColumnToShowByName(column_name)
+            count += ret
+
+        if count == len(columns_name):
+            return 2    #All columns in the columns_name are added.
+        elif count > 0:
+            return 1    #Some columns are not added.
+        else:
+            return 0    #No column was added.
+
+    def addColumnsDefaultToShow(self):
+        return self.addColumnsToShow(self.default_columns_show)
+
+    def addColumnsAllToShow(self):
+        return self.addColumnsToShow(self.columns)
+
+    def removeColumnFromShow(self,column_out):
+        for column_show in self.columns_show:
+            if (column_show.getName() == column_out.getName()):
+                self.columns_show.remove(column_show)
+                return 1
+
+        for column in self.columns:
+            if (column.getName() == column_out.getName()):
+                return 0
+
+        return -1
+
+    def removeColumnsFromShow(self,columns):
+        for column_out in columns:
+            find = 0
+            for column in self.columns:
+                if column_out.getName() == column.getName():
+                    find = 1
+                    break
+            if find == 0:
+                return -1   #There are not supported columns in the columns_name
+
+        count = 0
+        for column_out in columns:
+            ret = self.removeColumnFromShow(column_out)
+            count += ret
+
+        if count == len(columns):
+            return 2    #All columns in the columns_name are added.
+        elif count > 0:
+            return 1    #Some columns are not added.
+        else:
+            return 0    #No column was added.
+
+    def removeColumnFromShowByName(self,column_name):
+        find = 0
+        for column in self.columns:
+            if (column_name == column.getName()):
+                find = 1
+        if find == 0:
+            return -1
+
+        for column in self.columns_show:
+            if (column_name == column.getName()):
+                self.columns_show.remove(column)
+                return 1
+
+        return 0
+
+    def removeColumnsFromShowByName(self,columns_name):
+        #Check all the columns name are corrent?
+        for column_name in columns_name:
+            find = 0
+            for column in self.columns:
+                if (column_name == column.getName()):
+                    find = 1
+                    break
+
+            if find == 0:
+                return -1   #There are not supported columns in the columns_name.
+
+        count = 0
+        for column_name in columns_name:
+            ret = self.removeColumnFromShowByName(column_name)
+            count += ret
+
+        if count == len(columns_name):
+            return 2    #All columns in the columns_name are removed.
+        elif count > 0:
+            return 1    #Some columns are not removed.
+        else:
+            return 0    #No column was removed.
+
+    def removeColumnsDefaultFromShow(self):
+        return self.removeColumnsFromShow(self.default_columns_show)
+
+    def removeColumnsAllFromShow(self):
+        return self.removeColumnsFromShow(self.columns)
+
     def getHeader(self):
         len_total = 0
-        for column in self.columns:
+        for column in self.columns_show:
             len_total += column.getWidth()
 
         if (len(self.name) == 0):
@@ -220,11 +395,12 @@ def field_handler_common(column, status, server):
 
 def get_status_line(server):
     line = ""
+
     for section in server.sections_to_show:
         if (server.err > 0):
             break
 
-        for column in section.getColumns():
+        for column in section.getColumnsToShow():
             if (server.err > 0):
                 break
 
@@ -238,6 +414,8 @@ def get_status_line(server):
     return line
 
 ####### Common #######
+ALL_COLUMNS="all_columns"
+
 def getSupportedServiceTypesName():
     names = ''
     count = len(support_types)
@@ -260,7 +438,7 @@ def get_sections_header(sections):
 def get_columns_header(sections):
     header = ''
     for section in sections:
-        for column in section.getColumns():
+        for column in section.getColumnsToShow():
             header += column.getHeader()
 
         header += '|'
@@ -333,13 +511,54 @@ def get_section_instructions(section):
 
     return section_instructions
 
+#section part maybe like "section_name" or "section_name[column1_name,column2_name,column3_name]"
+def extract_section_name_and_columns_name_from_section_part(section_part):
+    if section_part.endswith("]") and section_part.find("[") >= 0:
+        index = section_part.index("[")
+        if (index == 0):
+            return None
+
+        columns_name=section_part[(index + 1):-1].split(",")
+        section_name = section_part[0:index]
+        return [section_name,columns_name]
+    else:
+        return [section_part]
+
+#sections part maybe like "section1_name,section2_name[column1_name,column2_name,column3_name],section3_name[all_columns]"
+def split_section_name_from_sections_part(sections_part):
+    sections_name = []
+    start=0
+    end = len(sections_part)-1
+    idx = -1
+    while start < end:
+        try:
+            idx = sections_part.index("],",start,end)
+        except Exception, e:
+            idx = start
+            break
+
+        if idx <= 0 or idx >= end:
+            return None
+
+        section_name = sections_part[start:idx+1]
+        sections_name.append(section_name)
+        start = idx + 2
+
+    if idx < 0:
+        return None
+    elif idx < end:
+        section_name = sections_part[idx:end+1]
+        sections_name.append(section_name)
+
+    return sections_name
+
 ## The caller need to catch the exception
 def field_handler_time(column, status, server):
     return server.getCurrentTimeFormattedString()
 
 time_section = StatusSection("time", [
 StatusColumn("Time", 5, column_flags_string, field_handler_time, [], "Show the time when the status display.")
-],[],"os time")
+],[],[ALL_COLUMNS],"os time")
 
 def get_os_cpu_status(server, status):
     file = open("/proc/stat", 'r')
@@ -377,7 +596,7 @@ StatusColumn("usr", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_usr","o
 StatusColumn("sys", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_sys","os_cpu_total"], "Percentage of cpu system+irq+softirq time."),
 StatusColumn("idl", 3, column_flags_rate, field_handler_os_cpu, ["os_cpu_idl","os_cpu_total"], "Percentage of cpu idle time."),
 StatusColumn("iow", 2, column_flags_rate, field_handler_os_cpu, ["os_cpu_iow","os_cpu_total"], "Percentage of cpu iowait time.")
-],[get_os_cpu_status],
+],[get_os_cpu_status],[ALL_COLUMNS],
 "os cpu status, collect from /proc/stat file")
 
 def get_os_load_status(server, status):
@@ -396,7 +615,7 @@ os_load_section = StatusSection("os_load", [
 StatusColumn("1m", 4, column_flags_string, field_handler_common, ["os_load_one"], "One minute average active tasks."),
 StatusColumn("5m", 4, column_flags_string, field_handler_common, ["os_load_five"], "Five minute average active tasks."),
 StatusColumn("15m", 3, column_flags_string, field_handler_common, ["os_load_fifteen"], "Fifteen minute average active tasks.")
-],[get_os_load_status],
+],[get_os_load_status],[ALL_COLUMNS],
 "os cpu average load status, collect from /proc/loadavg file")
 
 def get_os_swap_status(server, status):
@@ -423,7 +642,7 @@ def get_os_swap_status(server, status):
 os_swap_section = StatusSection("os_swap", [
 StatusColumn("si", 4, column_flags_rate, field_handler_common, ["os_swap_pswpin"], "Counts per second of data moved from memory to swap, related to pswpin."),
 StatusColumn("so", 4, column_flags_rate, field_handler_common, ["os_swap_pswpout"], "Counts per second of data moved from swap to memory, related to pswpout.")
-],[get_os_swap_status],
+],[get_os_swap_status],[ALL_COLUMNS],
 "os swap status, collect from /proc/vmstat file")
 
 net_face_name="lo"
@@ -448,14 +667,14 @@ def get_os_net_status(server, status):
 os_net_bytes_section = StatusSection("os_net_bytes", [
 StatusColumn("in", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_in"], "Bytes per second the network incoming."),
 StatusColumn("out", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["os_net_bytes_out"], "Bytes per second the network outgoing.")
-],[get_os_net_status],
+],[get_os_net_status],[ALL_COLUMNS],
 "os network bytes status, collect from /proc/net/dev file, you need to use --net-face option "
 "to set the net face name that you want to monitor, the net face name is in the /proc/net/dev file")
 
 os_net_packages_section = StatusSection("os_net_packages", [
 StatusColumn("in", 0, column_flags_rate, field_handler_common, ["os_net_packages_in"], "Packages per second the network incoming."),
 StatusColumn("out", 0, column_flags_rate, field_handler_common, ["os_net_packages_out"], "Packages per second the network outgoing.")
-],[get_os_net_status],
+],[get_os_net_status],[ALL_COLUMNS],
 "os network packages status, collect from /proc/net/dev file, you need to use --net-face option "
 "to set the net face name that you want to monitor, the net face name is in the /proc/net/dev file")
 
@@ -553,7 +772,7 @@ StatusColumn("queue", 2, column_flags_string, field_handler_common, ["os_disk_qu
 StatusColumn("await", 2, column_flags_string, field_handler_common, ["os_disk_wait"], "Average milliseconds of queue and service time for each read/write."),
 StatusColumn("svctm", 2, column_flags_string, field_handler_common, ["os_disk_service_time"], "Average milliseconds of service time for each read/write."),
 StatusColumn("%util", 1, column_flags_string, field_handler_common, ["os_disk_busy"], "Disk utilization percent.")
-],[get_disk_status],
+],[get_disk_status],[ALL_COLUMNS],
 "os disk status, collect from /proc/diskstats file, you need to use --disk-name option "
 "to set the disk name that you want to monitor, the disk name is in the /proc/diskstats file")
 
@@ -592,7 +811,7 @@ StatusColumn("total", 0, column_flags_bytes, field_handler_common, ["os_mem_tota
 StatusColumn("free", 0, column_flags_bytes, field_handler_common, ["os_mem_free"],"Free memory size bytes."),
 StatusColumn("buffer", 0, column_flags_bytes, field_handler_common, ["os_mem_buffers"],"Buffered memory size bytes."),
 StatusColumn("cached", 0, column_flags_bytes, field_handler_common, ["os_mem_cached"],"Cached memory size bytes.")
-], [get_os_mem_status],
+], [get_os_mem_status],[ALL_COLUMNS],
 "os memory status, collect from /proc/meminfo file")
 
 proc_pid = 0
@@ -630,7 +849,7 @@ def get_proc_cpu_status(server, status):
 
 proc_cpu_section = StatusSection("proc_cpu", [
 StatusColumn("%cpu", 0, column_flags_rate, field_handler_common, ["proc_cpu"], "Cpu utilization per second.")
-], [get_proc_cpu_status],
+], [get_proc_cpu_status],[ALL_COLUMNS],
 "process cpu status, collect from /proc/[pid]/stat file, usually the pid should automatically "
 "get from the server.getPidNum() function, but you can also replace the pid by the --proc-pid option")
 
@@ -677,7 +896,7 @@ def get_proc_mem_status(server, status):
 proc_mem_section = StatusSection("proc_mem", [
 StatusColumn("rss", 0, column_flags_bytes, field_handler_common, ["proc_mem_res"], "Bytes for resident memory size of the process in."),
 StatusColumn("vsz", 0, column_flags_bytes, field_handler_common, ["proc_mem_virt"], "Bytes for virtual memory size of the process in.")
-], [get_proc_mem_status],
+], [get_proc_mem_status],[ALL_COLUMNS],
 "process memory status, collect from /proc/[pid]/status file, usually the pid should automatically "
 "get from the server.getPidNum() function, but you can also replace the pid by the --proc-pid option")
 
@@ -810,9 +1029,8 @@ class Server:
         return removed_count
 
     def setDefaultSectionsToShow(self, sections):
-        self.sections_to_show = sections
         for section in sections:
-            self.addSectionStatusGetFunctions(section)
+            self.addSectionToShow(section.getName())
 
         return
 
@@ -842,13 +1060,46 @@ class Server:
         return None
 
     def addSectionToShow(self, section_name):
+        #section_name maybe contain column names like "section_name[column_name1,column_name2,column_name3]"
+        section_part = extract_section_name_and_columns_name_from_section_part(section_name)
+        columns_name = None
+        if section_part == None:
+            return -1
+        elif len(section_part) == 2:
+            section_name = section_part[0]
+            columns_name = section_part[1]
+
         #Check if the section is already exsited.
         for section in self.sections_to_show:
             if (section.getName() == section_name):
-                return 0
+                ret = 0
+                if columns_name == None:
+                    ret = section.addColumnsDefaultToShow()
+                elif len(columns_name) == 1 and columns_name[0] == ALL_COLUMNS:
+                    ret = section.addColumnsAllToShow()
+                else:
+                    ret = section.addColumnsToShowByName(columns_name)
+
+                if ret == -1:
+                    return -1
+                if ret > 0:
+                    return 1
+                else:
+                    return 0
 
         section = self.getSectionByName(section_name)
-        if (section == None):
+        if section == None:
+            return -1
+
+        ret = 0
+        if columns_name == None:
+            ret = section.addColumnsDefaultToShow()
+        elif len(columns_name) == 1 and columns_name[0] == ALL_COLUMNS:
+            ret = section.addColumnsAllToShow()
+        else:
+            ret = section.addColumnsToShowByName(columns_name)
+
+        if ret == -1:
             return -1
 
         self.sections_to_show.append(section)
@@ -856,28 +1107,52 @@ class Server:
         return 1
 
     def removeSectionFromShow(self, section_name):
+        # section_name maybe contain column names like "section_name[column_name1,column_name2,column_name3]"
+        section_part = extract_section_name_and_columns_name_from_section_part(section_name)
+        columns_name = None
+        if section_part == None:
+            return -1   #section_name format is error.
+        elif len(section_part) == 2:
+            section_name = section_part[0]
+            columns_name = section_part[1]
+
         if (self.isSectionSupported(section_name) == False):
-            return -1
+            return -1   #This section is not supported.
 
         #Delete it if the section is exsited.
         for section in self.sections_to_show:
             if (section.getName() == section_name):
-                self.sections_to_show.remove(section)
-                self.removeSectionStatusGetFunctions(section)
-                return 1
+                ret = 0
+                if columns_name == None:
+                    ret = section.removeColumnsDefaultFromShow()
+                elif len(columns_name) == 1 and columns_name[0] == ALL_COLUMNS:
+                    ret = section.removeColumnsAllFromShow()
+                else:
+                    ret = section.removeColumnsFromShowByName(columns_name)
 
-        return 0
+                if ret == -1:
+                    return -1   #Some column name are not supported.
+
+                if len(section.getColumnsToShow()) == 0:
+                    self.sections_to_show.remove(section)
+                    self.removeSectionStatusGetFunctions(section)
+                    return 2    #This section was removed.
+
+                if ret > 0:
+                    return 1    #Some columns were removed from this section.
+
+        return 0    #Nothing was removed.
 
     def getStatus(self):
         for func in self.status_get_funcs:
-            if (self.err == 1):
+            if self.err > 0:
                 break
 
             try:
                 func[0](self,self.status)
             except Exception, e:
                 self.err = 1
-                self.errmsg = e.message
+                self.errmsg = str(func[0]) + " " + e.message
 
         return
 
@@ -888,6 +1163,8 @@ class Server:
         # Init the first status
         self.getStatus()
         get_status_line(self)
+        if (self.err > 0):
+            output(self.getCurrentTimeFormattedString() + " Exception: " + self.errmsg)
 
         counter = -1
         while (1):
@@ -914,7 +1191,7 @@ class Server:
                 except Exception, e:
                     self.err = 1
                     self.errmsg = e.message
-                    output(self.getCurrentTimeFormattedString() + " " + self.errmsg)
+                    output(self.getCurrentTimeFormattedString() + " Exception: " + self.errmsg)
                     continue
 
                 # Reinit the first status
@@ -922,11 +1199,14 @@ class Server:
                 get_status_line(self)
                 time.sleep(0.1)
                 self.need_reinit = 0
+                if self.err > 0:
+                    output(self.getCurrentTimeFormattedString() + " Exception: " + self.errmsg)
+                    continue
 
             self.getStatus()
             status_line = get_status_line(self)
-            if (self.err > 0):
-                output(self.getCurrentTimeFormattedString()+" "+self.errmsg)
+            if self.err > 0:
+                output(self.getCurrentTimeFormattedString()+" Exception: "+self.errmsg)
                 continue
 
             output(status_line)
@@ -1075,13 +1355,13 @@ StatusColumn("DPs", 0, column_flags_rate, field_handler_common,["Com_delete"], "
 StatusColumn("IPs", 0, column_flags_rate, field_handler_common,["Com_insert"], "Insert commands per second."),
 StatusColumn("UPs", 0, column_flags_rate, field_handler_common,["Com_update"], "Update commands per second."),
 StatusColumn("DIUPs", 0, column_flags_rate, field_handler_common,["Com_delete","Com_insert","Com_update"], "DDL(delete+insert+update) commands per second.")
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql commands status, collect from \'show global status\'")
 
 mysql_net_section = StatusSection("net", [
 StatusColumn("NetIn", 0, column_flags_rate|column_flags_bytes, field_handler_common,["Bytes_received"], "Bytes per second received from all clients."),
 StatusColumn("NetOut", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Bytes_sent"], "Bytes per second sent to all clients.")
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql network status, collect from \'show global status\'")
 
 mysql_threads_section = StatusSection("threads_conns", [
@@ -1091,21 +1371,21 @@ StatusColumn("Cache", 0, column_flags_none, field_handler_common, ["Threads_cach
 StatusColumn("Conns", 0, column_flags_none, field_handler_common, ["Threads_connected"], "The number of currently open connections."),
 StatusColumn("Try", 0, column_flags_rate, field_handler_common, ["Connections"], "Counts per second of connection attempts (successful or not) to the MySQL server."),
 StatusColumn("Abort", 0, column_flags_rate, field_handler_common, ["Aborted_connects"], "Counts per second of failed attempts to connect to the MySQL server.")
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql thread status, collect from \'show global status\'")
 
 mysql_innodb_redo_log_section = StatusSection("innodb_redo_log", [
 StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_bytes_written"], "Bytes per second redo log data written."),
 StatusColumn("Flushed", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_bytes_flushed"], "Bytes per second redo log data flushed."),
 StatusColumn("Checked", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["redo_log_last_checkpoint"], "Bytes per second redo log data checked.")
-], [get_innodb_status],
+], [get_innodb_status],[ALL_COLUMNS],
 "mysql innodb redo log status, collect from \'show engine innodb status\'")
 
 mysql_innodb_log_section = StatusSection("innodb_log", [
 StatusColumn("HisList", 0, column_flags_none, field_handler_common, ["inno_history_list"], "History list length."),
 StatusColumn("Fsyncs", 0, column_flags_rate, field_handler_common, ["Innodb_os_log_fsyncs"], "Counts per second of fsync() writes done to the log file."),
 StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_os_log_written"], "Bytes per second written to the log file.")
-], [get_mysql_status, get_innodb_status],
+], [get_mysql_status, get_innodb_status],[ALL_COLUMNS],
 "mysql innodb redo log status, collect from \'show global status\' and \'show engine innodb status\'")
 
 mysql_innodb_buffer_pool_usage_section = StatusSection("innodb_bp_usage", [
@@ -1114,7 +1394,7 @@ StatusColumn("Dirty", 0, column_flags_none, field_handler_common, ["Innodb_buffe
 StatusColumn("DReads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_reads"], "Counts per second of logical reads that InnoDB could not satisfy from the buffer pool, and had to read directly from the disk."),
 StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_read_requests"], "Counts per second of logical read requests."),
 StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_buffer_pool_write_requests"], "Counts per second of writes done to the InnoDB buffer pool.")
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql innodb buffer pool status, collect from \'show global status\'")
 
 mysql_innodb_rows_section = StatusSection("innodb_rows", [
@@ -1122,7 +1402,7 @@ StatusColumn("Insert", 0, column_flags_rate, field_handler_common, ["Innodb_rows
 StatusColumn("Update", 0, column_flags_rate, field_handler_common, ["Innodb_rows_updated"], "Counts per second of rows updated in InnoDB tables."),
 StatusColumn("Delete", 0, column_flags_rate, field_handler_common, ["Innodb_rows_deleted"], "Counts per second of rows deleted in InnoDB tables."),
 StatusColumn("Read", 0, column_flags_rate, field_handler_common, ["Innodb_rows_read"], "Counts per second of rows read from InnoDB tables.")
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql innodb rows status, collect from \'show global status\'")
 
 mysql_innodb_data_section = StatusSection("innodb_data", [
@@ -1130,7 +1410,7 @@ StatusColumn("Reads", 0, column_flags_rate, field_handler_common, ["Innodb_data_
 StatusColumn("Writes", 0, column_flags_rate, field_handler_common, ["Innodb_data_writes"], "Counts per second of data writes."),
 StatusColumn("Read", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_read"], "Bytes per second data read."),
 StatusColumn("Written", 0, column_flags_rate|column_flags_bytes, field_handler_common, ["Innodb_data_written"], "Bytes per second data written.")
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql innodb data status, collect from \'show global status\'")
 
 mysql_innodb_row_lock_section = StatusSection("row_lock", [
@@ -1138,7 +1418,7 @@ StatusColumn("LWaits", 0, column_flags_rate, field_handler_common, ["Innodb_row_
     "a row lock had to be waited for."),
 StatusColumn("LTime", 0, column_flags_rate, field_handler_common, ["Innodb_row_lock_time"], "Milliseconds spent "
     "in acquiring row locks among one second.")
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql row lock status, collect from \'show global status\'")
 
 mysql_table_lock_section = StatusSection("table_lock", [
@@ -1148,7 +1428,7 @@ StatusColumn("LWait", 0, column_flags_rate, field_handler_common, ["Table_locks_
     "your table or tables or use replication."),
 StatusColumn("LImt", 0, column_flags_rate, field_handler_common, ["Table_locks_immediate"], "Times per second "
     "that a request for a table lock could be granted immediately.")
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql table lock status, collect from \'show global status\'")
 
 mysql_innodb_internal_lock_section = StatusSection("innodb_internal_lock", [
@@ -1170,7 +1450,7 @@ StatusColumn("ERound", 0, column_flags_rate, field_handler_common, ["inno_exclrw
     "the threads looped in the spin-wait cycle for RW-excl."),
 StatusColumn("EOWait", 0, column_flags_rate, field_handler_common, ["inno_exclrw_os_waits"], "Times per second "
     "the thread gave up spin-waiting and went to sleep instead for RW-excl.")
-], [get_innodb_status],
+], [get_innodb_status],[ALL_COLUMNS],
 "mysql innodb internal lock status, collect from \'show engine innodb status\'")
 
 mysql_slave_section = StatusSection("slave", [
@@ -1182,7 +1462,7 @@ StatusColumn("Delay", 0, column_flags_none, field_handler_common, ["seconds_behi
     "the slow-reading slave I/O thread, so Seconds_Behind_Master often shows a value of 0, even if the I/O thread is "
     "late compared to the master. In other words, this column is useful only for fast networks."),
 StatusColumn("RSpace", 0, column_flags_bytes, field_handler_common, ["relay_log_space"], "The total combined size of all existing relay log files.")
-], [get_slave_status],
+], [get_slave_status],[ALL_COLUMNS],
 "mysql slave status, collect from \'show slave status\'")
 
 mysql_handler_read_section = StatusSection("handler_read", [
@@ -1193,14 +1473,14 @@ StatusColumn("Next", 0, column_flags_rate, field_handler_common, ["Handler_read_
 StatusColumn("Prev", 0, column_flags_rate, field_handler_common, ["Handler_read_prev"], "Requests per second to read the previous row in key order. This read method is mainly used to optimize ORDER BY ... DESC."),
 StatusColumn("Rnd", 0, column_flags_rate, field_handler_common, ["Handler_read_rnd"], "Requests per second to read a row based on a fixed position. This value is high if you are doing a lot of queries that require sorting of the result. You probably have a lot of queries that require MySQL to scan entire tables or you have joins that do not use keys properly."),
 StatusColumn("RNext", 0, column_flags_rate, field_handler_common, ["Handler_read_rnd_next"], "Requests per second to read the next row in the data file. This value is high if you are doing a lot of table scans. Generally this suggests that your tables are not properly indexed or that your queries are not written to take advantage of the indexes you have.")
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql handler read status, collect from \'show global status\' about \'Handler_read_*\' variables")
 
 mysql_handler_ddl_section = StatusSection("handler_ddl", [
 StatusColumn("Write", 0, column_flags_rate, field_handler_common, ["Handler_write"], "Requests per second to insert a row in a table."),
 StatusColumn("Update", 0, column_flags_rate, field_handler_common, ["Handler_update"], "Requests per second to update a row in a table."),
 StatusColumn("Del", 0, column_flags_rate, field_handler_common, ["Handler_delete"], "Times per second that rows have been deleted from tables")
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql handler ddl status, collect from \'show global status\'")
 
 mysql_handler_transaction_section = StatusSection("handler_trx", [
@@ -1209,7 +1489,7 @@ StatusColumn("Pre", 0, column_flags_rate, field_handler_common, ["Handler_prepar
 StatusColumn("Rback", 0, column_flags_rate, field_handler_common, ["Handler_rollback"], "Requests per second for a storage engine to perform a rollback operation."),
 StatusColumn("Spoint", 0, column_flags_rate, field_handler_common, ["Handler_savepoint"], "Requests per second for a storage engine to place a savepoint."),
 StatusColumn("SPRb", 0, column_flags_rate, field_handler_common, ["Handler_savepoint_rollback"], "Requests per second for a storage engine to roll back to a savepoint."),
-], [get_mysql_status],
+], [get_mysql_status],[ALL_COLUMNS],
 "mysql handler transaction status, collect from \'show global status\'")
 
 mysql_sections = [
@@ -1369,32 +1649,32 @@ redis_connection_section = StatusSection("connection", [
 StatusColumn("conns", 0, column_flags_none, field_handler_common, ["connected_clients"], "Counts for connected clients."),
 StatusColumn("receive", 0, column_flags_rate, field_handler_common, ["total_connections_received"], "Number of connections accepted by the server per second."),
 StatusColumn("reject", 0, column_flags_rate, field_handler_common, ["rejected_connections"], "Number of connections rejected because of maxclients limit per second.")
-], [get_redis_status],
+], [get_redis_status],[ALL_COLUMNS],
 "redis connection status, collect from \'info\'")
 
 redis_client_section = StatusSection("client", [
 StatusColumn("LOList", 0, column_flags_none, field_handler_common, ["client_longest_output_list"], "Longest client output list length."),
 StatusColumn("BIBuf", 0, column_flags_bytes, field_handler_common, ["client_biggest_input_buf"], "Biggest client input buffer size in bytes.")
-], [get_redis_status],
+], [get_redis_status],[ALL_COLUMNS],
 "redis client status, collect from \'info\'")
 
 redis_memory_section = StatusSection("mem", [
 StatusColumn("used", 0, column_flags_bytes, field_handler_common, ["used_memory"], "Total number of bytes allocated by Redis using its allocator (either standard libc, jemalloc, or an alternative allocator such as tcmalloc."),
 StatusColumn("rss", 0, column_flags_bytes, field_handler_common, ["used_memory_rss"], "Number of bytes that Redis allocated as seen by the operating system (a.k.a resident set size). This is the number reported by tools such as top(1) and ps(1)."),
 StatusColumn("peak", 0, column_flags_bytes, field_handler_common, ["used_memory_peak"], "Peak memory consumed by Redis (in bytes).")
-], [get_redis_status],
+], [get_redis_status],[ALL_COLUMNS],
 "redis memory usage, collect from \'info\'")
 
 redis_net_section = StatusSection("net", [
 StatusColumn("in", 0, column_flags_bytes|column_flags_rate, field_handler_common, ["total_net_input_bytes"], "Bytes per second received into redis."),
 StatusColumn("out", 0, column_flags_bytes|column_flags_rate, field_handler_common, ["total_net_output_bytes"], "Bytes per second sent by redis.")
-], [get_redis_status],
+], [get_redis_status],[ALL_COLUMNS],
 "redis network status, collect from \'info\'")
 
 redis_keyspace_section = StatusSection("keyspace", [
 StatusColumn("keys", 0, column_flags_none, field_handler_redis_keyspace, [], "Number of keys in all db."),
 StatusColumn("expires", 0, column_flags_none, field_handler_redis_keyspace, [], "Number of keys with an expiration in all db.")
-], [get_redis_status],
+], [get_redis_status],[ALL_COLUMNS],
 "redis keyspace status, collect from \'info\'")
 
 redis_key_section = StatusSection("key", [
@@ -1402,27 +1682,27 @@ StatusColumn("hits", 0, column_flags_rate, field_handler_common, ["keyspace_hits
 StatusColumn("misses", 0, column_flags_rate, field_handler_common, ["keyspace_misses"], "Count per second of failed lookup of keys in the main dictionary."),
 StatusColumn("expired", 0, column_flags_rate, field_handler_common, ["expired_keys"], "Number of key expiration events among one second."),
 StatusColumn("evicted", 0, column_flags_rate, field_handler_common, ["evicted_keys"], "Number of evicted keys due to maxmemory limit among one second.")
-], [get_redis_status],
+], [get_redis_status],[ALL_COLUMNS],
 "redis key status, collect from \'info\'")
 
 redis_command_section = StatusSection("command", [
 StatusColumn("cmds", 0, column_flags_none, field_handler_common, ["redis_all_commands_count"], "Number of commands processed per second."),
 StatusColumn("reads", 0, column_flags_none, field_handler_common, ["redis_readonly_commands_count"], "Number of readonly commands processed per second."),
 StatusColumn("writes", 0, column_flags_none, field_handler_common, ["redis_write_commands_count"], "Number of write commands processed per second.")
-], [get_redis_command_status],
+], [get_redis_command_status],[ALL_COLUMNS],
 "redis command status, collect from \'info commandstat\' and \'command\'")
 
 redis_persistence_section = StatusSection("persis", [
 StatusColumn("ln", 1, column_flags_none, field_handler_common, ["loading"], "Flag indicating if the load of a dump file is on-going."),
 StatusColumn("rn", 1, column_flags_none, field_handler_common, ["rdb_bgsave_in_progress"], "Flag indicating a RDB save is on-going."),
 StatusColumn("an", 1, column_flags_none, field_handler_common, ["aof_rewrite_in_progress"], "Flag indicating a AOF rewrite operation is on-going.")
-], [get_redis_status],
+], [get_redis_status],[ALL_COLUMNS],
 "redis persistence status, collect from \'info\'")
 
 redis_replication_section = StatusSection("repl", [
 StatusColumn("r", 1, column_flags_string, field_handler_redis_replication, ["role"], "Value is \'M\' if the instance is slave of no one(it is a master), or \'S\' if the instance is enslaved to a master(it is a slave). Note that a slave can be master of another slave (daisy chaining)."),
 StatusColumn("s/l", 2, column_flags_string, field_handler_redis_replication, ["connected_slaves","master_link_status"], "If the role is master, it means the number of connected slaves. If the role is slave, it means the status of the link (up/down)")
-], [get_redis_status],
+], [get_redis_status],[ALL_COLUMNS],
 "redis replication status, collect from \'info\'")
 
 redis_sections = [
@@ -1480,13 +1760,13 @@ def get_memcached_status(server, status):
 memcached_connection_section = StatusSection("connection", [
 StatusColumn("conns", 0, column_flags_none, field_handler_common, ["curr_connections"], "Counts for connected clients."),
 StatusColumn("receive", 0, column_flags_rate, field_handler_common, ["total_connections"], "Number of connections accepted by the server per second.")
-], [get_memcached_status],
+], [get_memcached_status],[ALL_COLUMNS],
 "memcached connection status, collect from \'stats\'")
 
 memcached_net_section = StatusSection("net", [
 StatusColumn("in", 0, column_flags_bytes|column_flags_rate, field_handler_common, ["bytes_read"], "Bytes per second received into memcached."),
 StatusColumn("out", 0, column_flags_bytes|column_flags_rate, field_handler_common, ["bytes_written"], "Bytes per second sent by memcached.")
-], [get_memcached_status],
+], [get_memcached_status],[ALL_COLUMNS],
 "memcached network status, collect from \'stats\'")
 
 memcached_sections = [
@@ -1590,11 +1870,11 @@ if __name__ == "__main__":
             if (arg == 'all'):
                 all_section = 1
             else:
-                sections_name = arg.split(',')
+                sections_name = split_section_name_from_sections_part(arg)
         elif opt in ('-a'):
-            sections_name_addition = arg.split(',')
+            sections_name_addition = split_section_name_from_sections_part(arg)
         elif opt in ('-d'):
-            sections_name_removed = arg.split(',')
+            sections_name_removed = split_section_name_from_sections_part(arg)
         elif opt in ('-o'):
             output_type = 1
             output_file_name = arg
@@ -1618,7 +1898,7 @@ if __name__ == "__main__":
         server = Server("OS", service_type, None, None, None, [])
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
-        else:
+        elif len(sections_name) == 0:
             server.setDefaultSectionsToShow(common_sections_to_show_default)
     elif (service_type == type_mysql):
         server = Server("Mysql", service_type,
