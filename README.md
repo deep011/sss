@@ -83,17 +83,19 @@ Unit [K,M,G,T] means it is bytes. 1T=1024G 1G=1024M 1M=1024K 1K=1024bytes
 If you want only display 'Reads', 'Writes', 'RBytes' and 'WBytes' columns of the 'os_disk' section, you can use "-s os_disk[Reads,Writes,RBytes,WBytes]" option.
 
     $ python sss.py -s os_disk[reads,writes,rbytes,wbytes]
-    --time--- --------------cmds--------------- -------net------- -------------threads_conns-------------- 
-         Time|  TPs   QPs  DPs  IPs  UPs  DIUPs|   NetIn   NetOut|  Run  Create  Cache  Conns   Try  Abort|
-     22:24:19|   17    15    0   29    1     30|   39.2K   220.0K|    6       0      7    229    45      0|
-     22:24:20|   22    33    0   34    3     37|   63.1K   271.7K|   13       0      7    229   147      0|
-     22:24:21|   46    57    0   50    7     57|   82.6K   302.6K|    5       0      7    229   123      0|
-     22:24:22|    8     3    0   16    1     17|   27.1K   120.1K|    4       0      7    229    61      0|
-     22:24:23|   52     8    0   94    1     95|   44.4K   122.3K|    2       0      7    229    76      0|
-     22:24:24|   39     4    0   79    0     79|   42.6K   113.5K|    5       0      7    229   111      0|
-     22:24:25|   16     6    0   37    1     38|   25.2K   124.6K|    2       0      7    229    41      0|
-     22:24:26|    9     5    0   17    1     18|   38.0K   183.6K|    4       0      7    229   126      0|
-     
+    ------------os_disk------------- 
+       reads  writes  rbytes  wbytes|
+        1.00  223.70    4.0K   87.9M|
+           0  298.57       0  127.4M|
+           0   46.97       0   20.1M|
+        1.00    3.99    4.0K  275.6K|
+           0  324.85       0  110.7M|
+           0    1.00       0    4.0K|
+        1.00    1.00    4.0K    4.0K|
+           0       0       0       0|
+        1.00    3.99    4.0K    1.1M|
+           0  171.90       0   60.5M|
+
 The -a -d options are also same format as the -s option like the above.
 
 ### All the supported sections:
