@@ -654,9 +654,11 @@ net_face_name="lo"
 def get_os_net_status(server, status):
     file = open("/proc/net/dev", 'r')
     line = file.readline().lstrip()
-    
+
+    find = 0
     while line:
         if (line.startswith(net_face_name+':')):
+            find = 1
             fields = line.split()
             status["os_net_bytes_in"] = fields[1]
             status["os_net_bytes_out"] = fields[9]
@@ -667,6 +669,11 @@ def get_os_net_status(server, status):
         line = file.readline().lstrip()
 
     file.close()
+
+    if find == 0:
+        errmsg = "Net face '" + net_face_name + "' is not exist!"
+        raise Exception(errmsg)
+
     return
 
 os_net_bytes_section = StatusSection("os_net_bytes", [
@@ -690,9 +697,11 @@ def get_disk_status(server, status):
     os_disk_stats_get_time = datetime.datetime.utcnow()
     line = file.readline()
 
+    find = 0
     while line:
         fields = line.split()
         if (fields[2] == disk_name):
+            find = 1
             global os_disk_stats_first_time
             if (os_disk_stats_first_time == 1):
                 os_disk_stats_first_time = 0
@@ -766,6 +775,11 @@ def get_disk_status(server, status):
         line = file.readline()
 
     file.close()
+
+    if find == 0:
+        errmsg = "Disk '" + disk_name + "' is not exist!"
+        raise Exception(errmsg)
+
     return
 
 os_disk_section = StatusSection("os_disk", [
@@ -835,9 +849,9 @@ def get_proc_cpu_status(server, status):
         filename = "/proc/"+str(proc_pid)+"/stat"
         file = open(filename, 'r')
     except IOError, e:
-        server.err = 1
-        server.errmsg = "Error can not open file: " + filename
         proc_pid_is_set = 0 # Need get the proc pid next time.
+        errmsg = "Proc id '" + str(proc_pid) + "' is not exist!"
+        raise Exception(errmsg)
         return
 
     line = file.readline()
@@ -1157,7 +1171,7 @@ class Server:
                 func[0](self,self.status)
             except Exception, e:
                 self.err = 1
-                self.errmsg = str(func[0]) + " " + e.message
+                self.errmsg = "Function " + getattr(func[0],'__name__') + ". " + e.message
 
         return
 
@@ -1190,8 +1204,10 @@ class Server:
             if (self.err > 0):
                 self.err = 0
                 try:
-                    self.clean(self)
-                    self.initialize(self)
+                    if self.clean != None:
+                        self.clean(self)
+                    if self.initialize != None:
+                        self.initialize(self)
                     self.need_reinit = 1
                 except Exception, e:
                     self.err = 1
