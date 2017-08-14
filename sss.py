@@ -1370,13 +1370,13 @@ def get_mysql_status_for_server(server):
     return
 
 mysql_commands_section = StatusSection("cmds", [
-StatusColumn("TPs", 0, column_flags_rate, field_handler_common, ["Com_commit", "Com_rollback"], "Transactions per second."),
 StatusColumn("QPs", 0, column_flags_rate, field_handler_common, ["Com_select"], "Select commands per second."),
 StatusColumn("DPs", 0, column_flags_rate, field_handler_common,["Com_delete"], "Delete commands per second."),
 StatusColumn("IPs", 0, column_flags_rate, field_handler_common,["Com_insert"], "Insert commands per second."),
 StatusColumn("UPs", 0, column_flags_rate, field_handler_common,["Com_update"], "Update commands per second."),
+StatusColumn("TPs", 0, column_flags_rate, field_handler_common, ["Com_commit", "Com_rollback"], "Transactions per second."),
 StatusColumn("DIUPs", 0, column_flags_rate, field_handler_common,["Com_delete","Com_insert","Com_update"], "DDL(delete+insert+update) commands per second.")
-], [get_mysql_status],[ALL_COLUMNS],
+], [get_mysql_status],["TPs","QPs","DPs","IPs","UPs","DIUPs"],
 "mysql commands status, collect from \'show global status\'")
 
 mysql_net_section = StatusSection("net", [
