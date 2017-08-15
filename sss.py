@@ -8,8 +8,9 @@ import sys
 type_os = "os"
 type_mysql = "mysql"
 type_redis = "redis"
+type_pika = "pika"
 type_memcached = "memcached"
-support_types=[type_os,type_mysql,type_redis,type_memcached]
+support_types=[type_os,type_mysql,type_redis,type_pika,type_memcached]
 
 service_type=type_os
 
@@ -1746,6 +1747,139 @@ redis_net_section,
 redis_connection_section
 ]
 
+####### Pika Implement #######
+def pika_connection_create():
+    import redis.connection
+    try:
+        pika_conn = redis.StrictRedis(
+            host=host,
+            port=port,
+            password=password)
+    except Exception,e:
+        server.err = 1
+        server.errmsg = e.message
+
+    return pika_conn
+
+def pika_connection_destroy(conn):
+    return
+
+## The caller need to catch the exception
+def pika_initialize_for_server(server):
+    server.pika_conn = pika_connection_create()
+    return
+
+## The caller need to catch the exception
+def pika_clean_for_server(server):
+    redis_connection_destroy(server.pika_conn)
+    return
+
+## The caller need to catch the exception
+def pika_get_pidnum_for_server(server):
+    pid = server.pika_conn.info("server")["process_id"]
+    return int(pid)
+
+## The caller need to catch the exception
+def get_pika_status(server, status):
+    pika_info = server.pika_conn.info()
+    for key in pika_info:
+        status[key] = pika_info[key]
+
+    return
+
+## The caller need to catch the exception
+def field_handler_pika_keyspace(column, status, server):
+    string_key_count = long(status["kv keys"])
+    hash_key_count = long(status["hash keys"])
+    list_key_count = long(status["list keys"])
+    zset_key_count = long(status["zset keys"])
+    set_key_count = long(status["set keys"])
+
+    if (column.getName() == "keys"):
+        return string_key_count+hash_key_count+list_key_count+zset_key_count+set_key_count
+    elif (column.getName() == "string"):
+        return string_key_count
+    elif (column.getName() == "hash"):
+        return hash_key_count
+    elif (column.getName() == "list"):
+        return list_key_count
+    elif (column.getName() == "zset"):
+        return zset_key_count
+    elif (column.getName() == "set"):
+        return set_key_count
+
+    return "0"
+
+## The caller need to catch the exception
+def field_handler_redis_replication(column, status, server):
+    if status["role"] == "master":
+        role = "M"
+        slaves_count = status["connected_slaves"]
+    elif status["role"] == "slave":
+        role = "S"
+        link_status = status["master_link_status"]
+
+    if column.getName() == "r":
+        return role
+    elif column.getName() == "s/l":
+        if role == "M":
+            return slaves_count
+        elif role == "S":
+            return link_status
+
+    return ""
+
+pika_connection_section = StatusSection("connection", [
+StatusColumn("conns", 0, column_flags_none, field_handler_common, ["connected_clients"], "Counts for connected clients."),
+StatusColumn("receive", 0, column_flags_rate, field_handler_common, ["total_connections_received"], "Number of connections accepted by the server per second.")
+], [get_pika_status],[ALL_COLUMNS],
+"pika connection status, collect from \'info\'")
+
+pika_data_section = StatusSection("data", [
+StatusColumn("DBSize", 0, column_flags_bytes, field_handler_common, ["db_size"], "Total number of bytes used by Pika in the data directory."),
+StatusColumn("UMem", 0, column_flags_bytes, field_handler_common, ["used_memory"], "Total number of bytes allocated by Pika using its allocator (either standard libc, jemalloc, or an alternative allocator such as tcmalloc."),
+StatusColumn("MTable", 0, column_flags_bytes, field_handler_common, ["db_memtable_usage"], "Total number of bytes allocated for the Pika memtable.")
+], [get_pika_status],[ALL_COLUMNS],
+"pika disk and memory usage, collect from \'info\'")
+
+pika_keyspace_section = StatusSection("keyspace", [
+StatusColumn("keys", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of all keys."),
+StatusColumn("string", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of string keys."),
+StatusColumn("hash", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of hash keys."),
+StatusColumn("list", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of list keys."),
+StatusColumn("zset", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of zset keys."),
+StatusColumn("set", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of set keys."),
+], [get_pika_status],["keys"],
+"pika keyspace status, collect from \'info\'")
+
+pika_command_section = StatusSection("command", [
+StatusColumn("cmds", 0, column_flags_rate, field_handler_common, ["total_commands_processed"], "Number of commands processed per second.")
+], [get_pika_status],[ALL_COLUMNS],
+"pika command status, collect from \'info\'")
+
+pika_replication_section = StatusSection("repl", [
+StatusColumn("r", 1, column_flags_string, field_handler_redis_replication, ["role"], "Value is \'M\' if the instance is slave of no one(it is a master), or \'S\' if the instance is enslaved to a master(it is a slave). Note that a slave can be master of another slave (daisy chaining)."),
+StatusColumn("s/l", 2, column_flags_string, field_handler_redis_replication, ["connected_slaves","master_link_status"], "If the role is master, it means the number of connected slaves. If the role is slave, it means the status of the link (up/down)")
+], [get_pika_status],[ALL_COLUMNS],
+"pika replication status, collect from \'info\'")
+
+pika_sections = [
+pika_connection_section,
+pika_data_section,
+pika_keyspace_section,
+pika_command_section,
+pika_replication_section
+]
+
+pika_sections_to_show_default = [
+time_section,
+pika_connection_section,
+pika_command_section,
+pika_data_section,
+pika_keyspace_section,
+pika_replication_section
+]
+
 ####### Memcached Implement #######
 def memcached_connection_create():
     import memcache
@@ -1954,6 +2088,18 @@ if __name__ == "__main__":
                 server.addSectionToShow(section.getName())
         elif (len(sections_name) == 0):
             server.setDefaultSectionsToShow(redis_sections_to_show_default)
+    elif (service_type == type_pika):
+        server = Server("Pika", service_type,
+                        pika_initialize_for_server,
+                        pika_clean_for_server,
+                        pika_get_pidnum_for_server,
+                        pika_sections)
+        if all_section == 1:
+            server.setDefaultSectionsToShow(common_sections)
+            for section in pika_sections:
+                server.addSectionToShow(section.getName())
+        elif (len(sections_name) == 0):
+            server.setDefaultSectionsToShow(pika_sections_to_show_default)
     elif (service_type == type_memcached):
         server = Server("Memcached", service_type,
                         memcached_initialize_for_server,
