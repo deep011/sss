@@ -5,14 +5,14 @@ import datetime
 import getopt
 import sys
 
-type_os = "os"
+type_linux = "linux"
 type_mysql = "mysql"
 type_redis = "redis"
 type_pika = "pika"
 type_memcached = "memcached"
-support_types=[type_os,type_mysql,type_redis,type_pika,type_memcached]
+support_types=[type_linux,type_mysql,type_redis,type_pika,type_memcached]
 
-service_type=type_os
+service_type=type_linux
 
 output_type = 0 #0 is print, 1 is file.
 output_file_name = ""
@@ -1946,7 +1946,7 @@ def usage():
     print '-P: target port'
     print '-u: target service user'
     print '-p: target user password'
-    print '-T: target service type, default is os'
+    print '-T: target service type, default is '+support_types[0]
     print '-s: sections to show, use comma to split'
     print '-a: addition sections to show, use comma to split'
     print '-d: removed sections for the showing, use comma to split'
@@ -1957,6 +1957,12 @@ def usage():
     print '--net-face: set the net device face name for os_net_* sections, default is \'lo\''
     print '--disk-name: set the disk device name for os_disk sections, default is \'vda\''
     print '--proc-pid: set the process pid number for proc_* sections, default is 0'
+    print '\r\n'
+    support_services=""
+    for service in support_types:
+        support_services+=service+" "
+    print 'Support services: '+support_services
+    print ''
 
 def version():
     return '0.2.0'
@@ -2058,7 +2064,7 @@ if __name__ == "__main__":
             sys.exit(3)
 
     server = None
-    if (service_type == type_os):
+    if (service_type == type_linux):
         server = Server("OS", service_type, None, None, None, [])
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
