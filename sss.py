@@ -955,8 +955,8 @@ class Server:
         self.header_sections = ""
         self.header_columns = ""
         self.status = {}
-        self.last_time = datetime.datetime.utcnow() # microsecond
-        self.current_time = datetime.datetime.utcnow() # microsecond
+        self.last_time = datetime.datetime.now() # microsecond
+        self.current_time = datetime.datetime.now() # microsecond
         self.err = 0
         self.errmsg = ""
         self.need_reinit = 0
@@ -1194,7 +1194,7 @@ class Server:
 
             # update the server time
             self.last_time = self.current_time
-            self.current_time = datetime.datetime.utcnow()
+            self.current_time = datetime.datetime.now()
 
             if (separate_output_file_if_needed(self) == 1 or counter % 10 == 0):
                 output(self.header_sections)
