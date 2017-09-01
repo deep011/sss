@@ -746,8 +746,8 @@ def get_os_swap_status(server, status):
     return
 
 os_swap_section = StatusSection("os_swap",type_linux,[
-StatusColumn("si", "swap_out", 4, column_flags_speed, field_handler_common, ["os_swap_pswpin"], "Counts per second of data moved from memory to swap, related to pswpin."),
-StatusColumn("so", "swap_in", 4, column_flags_speed, field_handler_common, ["os_swap_pswpout"], "Counts per second of data moved from swap to memory, related to pswpout.")
+StatusColumn("si", "swap_in_per_second", 4, column_flags_speed, field_handler_common, ["os_swap_pswpin"], "Counts per second of data moved from memory to swap, related to pswpin."),
+StatusColumn("so", "swap_out_per_second", 4, column_flags_speed, field_handler_common, ["os_swap_pswpout"], "Counts per second of data moved from swap to memory, related to pswpout.")
 ],[get_os_swap_status],[ALL_COLUMNS],
 "os swap status, collect from /proc/vmstat file")
 
@@ -1645,23 +1645,23 @@ StatusColumn("LImt", "table_lock_immediate_granted_per_second", 0, column_flags_
 "mysql table lock status, collect from \'show global status\'")
 
 mysql_innodb_internal_lock_section = StatusSection("innodb_internal_lock", "",[
-StatusColumn("MSpin", "mutex_spin_waits", 0, column_flags_speed, field_handler_common, ["inno_mutex_spin_waits"], "Times per second "
+StatusColumn("MSpin", "mutex_spin_waits_per_second", 0, column_flags_speed, field_handler_common, ["inno_mutex_spin_waits"], "Times per second "
     "the Mutex spin waits."),
-StatusColumn("MRound", "mutex_rounds", 0, column_flags_speed, field_handler_common, ["inno_mutex_rounds"], "Times per second the "
+StatusColumn("MRound", "mutex_rounds_per_second", 0, column_flags_speed, field_handler_common, ["inno_mutex_rounds"], "Times per second the "
     "threads looped in the spin-wait cycle for Mutex."),
-StatusColumn("MOWait", "mutex_os_waits", 0, column_flags_speed, field_handler_common, ["inno_mutex_os_waits"], "Times per second "
+StatusColumn("MOWait", "mutex_os_waits_per_second", 0, column_flags_speed, field_handler_common, ["inno_mutex_os_waits"], "Times per second "
     "the thread gave up spin-waiting and went to sleep instead for Mutex."),
-StatusColumn("SSpin", "rw_shared_spin_waits", 0, column_flags_speed, field_handler_common, ["inno_shrdrw_spins"], "Times per second the "
+StatusColumn("SSpin", "rw_shared_spin_waits_per_second", 0, column_flags_speed, field_handler_common, ["inno_shrdrw_spins"], "Times per second the "
     "RW-shared spin waits."),
-StatusColumn("SRound", "rw_shared_spin_rounds", 0, column_flags_speed, field_handler_common, ["inno_shrdrw_rounds"], "Times per second "
+StatusColumn("SRound", "rw_shared_spin_rounds_per_second", 0, column_flags_speed, field_handler_common, ["inno_shrdrw_rounds"], "Times per second "
     "the threads looped in the spin-wait cycle for RW-shared."),
-StatusColumn("SOWait", "rw_shared_spin_os_waits", 0, column_flags_speed, field_handler_common, ["inno_shrdrw_os_waits"], "Times per second "
+StatusColumn("SOWait", "rw_shared_spin_os_waits_per_second", 0, column_flags_speed, field_handler_common, ["inno_shrdrw_os_waits"], "Times per second "
     "the thread gave up spin-waiting and went to sleep instead for RW-shared."),
-StatusColumn("ESpin", "rw_excl_spin_waits", 0, column_flags_speed, field_handler_common, ["inno_exclrw_spins"], "Times per second the "
+StatusColumn("ESpin", "rw_excl_spin_waits_per_second", 0, column_flags_speed, field_handler_common, ["inno_exclrw_spins"], "Times per second the "
     "RW-excl spin waits."),
-StatusColumn("ERound", "rw_excl_spin_rounds", 0, column_flags_speed, field_handler_common, ["inno_exclrw_rounds"], "Times per second "
+StatusColumn("ERound", "rw_excl_spin_rounds_per_second", 0, column_flags_speed, field_handler_common, ["inno_exclrw_rounds"], "Times per second "
     "the threads looped in the spin-wait cycle for RW-excl."),
-StatusColumn("EOWait", "rw_excl_spin_os_waits", 0, column_flags_speed, field_handler_common, ["inno_exclrw_os_waits"], "Times per second "
+StatusColumn("EOWait", "rw_excl_spin_os_waits_per_second", 0, column_flags_speed, field_handler_common, ["inno_exclrw_os_waits"], "Times per second "
     "the thread gave up spin-waiting and went to sleep instead for RW-excl.")
 ], [get_innodb_status],[ALL_COLUMNS],
 "mysql innodb internal lock status, collect from \'show engine innodb status\'")
@@ -1871,10 +1871,10 @@ StatusColumn("expires", "", 0, column_flags_none, field_handler_common, ["expire
 "redis keyspace status, collect from \'info\'")
 
 redis_key_section = StatusSection("key", "",[
-StatusColumn("hits", "", 0, column_flags_speed, field_handler_common, ["keyspace_hits"], "Count per second of successful lookup of keys in the main dictionary."),
-StatusColumn("misses", "", 0, column_flags_speed, field_handler_common, ["keyspace_misses"], "Count per second of failed lookup of keys in the main dictionary."),
-StatusColumn("expired", "", 0, column_flags_speed, field_handler_common, ["expired_keys"], "Number of key expiration events among one second."),
-StatusColumn("evicted", "", 0, column_flags_speed, field_handler_common, ["evicted_keys"], "Number of evicted keys due to maxmemory limit among one second.")
+StatusColumn("hits", "hits_per_second", 0, column_flags_speed, field_handler_common, ["keyspace_hits"], "Count per second of successful lookup of keys in the main dictionary."),
+StatusColumn("misses", "misses_per_second", 0, column_flags_speed, field_handler_common, ["keyspace_misses"], "Count per second of failed lookup of keys in the main dictionary."),
+StatusColumn("expired", "expired_per_second", 0, column_flags_speed, field_handler_common, ["expired_keys"], "Number of key expiration events among one second."),
+StatusColumn("evicted", "evicted_per_second", 0, column_flags_speed, field_handler_common, ["evicted_keys"], "Number of evicted keys due to maxmemory limit among one second.")
 ], [get_redis_status],[ALL_COLUMNS],
 "redis key status, collect from \'info\'")
 
