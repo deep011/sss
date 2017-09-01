@@ -467,11 +467,13 @@ def get_status_falcon_json(server):
         if (server.err > 0):
             break
 
-        metric_name_header = service_type + "."
-        if section.getType != type_linux:
-            metric_name_header += str(port) + "."
+        tags = ""
+        if section.getType == type_linux:
+            tags += "linux"
+        else:
+            tags += "port=" + str(port)
 
-        metric_name_header += section.getName() + "."
+        metric_name_header = service_type + "." + section.getName() + "."
 
         for column in section.getColumnsToShow():
             if (server.err > 0):
@@ -498,6 +500,7 @@ def get_status_falcon_json(server):
                     "step": status_collect_interval,
                     "value": float(column.getValue(column,server.status,server)),
                     "counterType": counterType,
+                    "tags": tags,
                 },)
             except Exception, e:
                 server.err = 1
@@ -1268,7 +1271,16 @@ class Server:
 
         return
 
+    def initStatus(self):
+        for section in self.sections_to_show:
+            for column in section.columns:
+                for field in column.getFields():
+                    self.status[field] = -1
+
+        return
+
     def getStatus(self):
+        self.initStatus()
         for func in self.status_get_funcs:
             if self.err > 0:
                 break
