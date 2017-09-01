@@ -98,7 +98,7 @@ def errlog(server, errstr):
         print server.getCurrentTimeFormattedString() + " " + errstr
     else:
         errlog_file = open(errlog_file_name, 'a', 0)
-        errlog_file.write(server.getCurrentTimeFormattedString() + " " + errstr + "\n")
+        errlog_file.write(server.getCurrentDateTimeFormattedString() + " " + errstr + "\n")
         errlog_file.close()
 
     return
@@ -1072,6 +1072,9 @@ class Server:
 
     def getCurrentTimeFormattedString(self):
         return column_format % (9, self.current_time.strftime(time_format))
+
+    def getCurrentDateTimeFormattedString(self):
+        return column_format % (9, self.current_time.strftime(date_format+" "+time_format))
 
     def getPidNum(self, server):
         if (self.getPidNumHandler == None):
