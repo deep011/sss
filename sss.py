@@ -1678,32 +1678,24 @@ StatusColumn("RSpace", "relay_log_space", 0, column_flags_bytes, field_handler_c
 ], [get_slave_status],[ALL_COLUMNS],
 "mysql slave status, collect from \'show slave status\'")
 
-mysql_handler_read_section = StatusSection("handler_read", "",[
+mysql_handler_section = StatusSection("handler", "",[
+StatusColumn("Write", "write_per_second", 0, column_flags_speed, field_handler_common, ["Handler_write"], "Requests per second to insert a row in a table."),
+StatusColumn("Update", "update_per_second", 0, column_flags_speed, field_handler_common, ["Handler_update"], "Requests per second to update a row in a table."),
+StatusColumn("Del", "delete_per_second", 0, column_flags_speed, field_handler_common, ["Handler_delete"], "Times per second that rows have been deleted from tables"),
 StatusColumn("First", "read_first_per_second", 0, column_flags_speed, field_handler_common, ["Handler_read_first"], "Times per second the first entry in an index was read. If this value is high, it suggests that the server is doing a lot of full index scans; for example, SELECT col1 FROM foo, assuming that col1 is indexed."),
 StatusColumn("Key", "read_key_per_second", 0, column_flags_speed, field_handler_common, ["Handler_read_key"], "Requests per second to read a row based on a key. If this value is high, it is a good indication that your tables are properly indexed for your queries."),
 StatusColumn("Last", "read_last_per_second", 0, column_flags_speed, field_handler_common, ["Handler_read_last"], "Requests per second to read the last key in an index. With ORDER BY, the server will issue a first-key request followed by several next-key requests, whereas with ORDER BY DESC, the server will issue a last-key request followed by several previous-key requests. This variable was added in MySQL 5.5.7."),
 StatusColumn("Next", "read_next_per_second", 0, column_flags_speed, field_handler_common, ["Handler_read_next"], "Requests per second to read the next row in key order. This value is incremented if you are querying an index column with a range constraint or if you are doing an index scan."),
 StatusColumn("Prev", "read_prev_per_second", 0, column_flags_speed, field_handler_common, ["Handler_read_prev"], "Requests per second to read the previous row in key order. This read method is mainly used to optimize ORDER BY ... DESC."),
 StatusColumn("Rnd", "read_rnd_per_second", 0, column_flags_speed, field_handler_common, ["Handler_read_rnd"], "Requests per second to read a row based on a fixed position. This value is high if you are doing a lot of queries that require sorting of the result. You probably have a lot of queries that require MySQL to scan entire tables or you have joins that do not use keys properly."),
-StatusColumn("RNext", "read_rnd_next_per_second", 0, column_flags_speed, field_handler_common, ["Handler_read_rnd_next"], "Requests per second to read the next row in the data file. This value is high if you are doing a lot of table scans. Generally this suggests that your tables are not properly indexed or that your queries are not written to take advantage of the indexes you have.")
-], [get_mysql_status],[ALL_COLUMNS],
-"mysql handler read status, collect from \'show global status\' about \'Handler_read_*\' variables")
-
-mysql_handler_ddl_section = StatusSection("handler_ddl", "",[
-StatusColumn("Write", "write_per_second", 0, column_flags_speed, field_handler_common, ["Handler_write"], "Requests per second to insert a row in a table."),
-StatusColumn("Update", "update_per_second", 0, column_flags_speed, field_handler_common, ["Handler_update"], "Requests per second to update a row in a table."),
-StatusColumn("Del", "delete_per_second", 0, column_flags_speed, field_handler_common, ["Handler_delete"], "Times per second that rows have been deleted from tables")
-], [get_mysql_status],[ALL_COLUMNS],
-"mysql handler ddl status, collect from \'show global status\'")
-
-mysql_handler_transaction_section = StatusSection("handler_trx", "",[
+StatusColumn("RNext", "read_rnd_next_per_second", 0, column_flags_speed, field_handler_common, ["Handler_read_rnd_next"], "Requests per second to read the next row in the data file. This value is high if you are doing a lot of table scans. Generally this suggests that your tables are not properly indexed or that your queries are not written to take advantage of the indexes you have."),
 StatusColumn("Commit", "commit_per_second", 0, column_flags_speed, field_handler_common, ["Handler_commit"], "Counts per second of internal COMMIT statements."),
 StatusColumn("Pre", "prepare_per_second", 0, column_flags_speed, field_handler_common, ["Handler_prepare"], "Counts per second of the prepare phase of two-phase commit operations."),
 StatusColumn("Rback", "rollback_per_second", 0, column_flags_speed, field_handler_common, ["Handler_rollback"], "Requests per second for a storage engine to perform a rollback operation."),
 StatusColumn("Spoint", "savepoint_per_second", 0, column_flags_speed, field_handler_common, ["Handler_savepoint"], "Requests per second for a storage engine to place a savepoint."),
-StatusColumn("SPRb", "rollback_per_second", 0, column_flags_speed, field_handler_common, ["Handler_savepoint_rollback"], "Requests per second for a storage engine to roll back to a savepoint."),
-], [get_mysql_status],[ALL_COLUMNS],
-"mysql handler transaction status, collect from \'show global status\'")
+StatusColumn("SPRb", "savepoint_rollback_per_second", 0, column_flags_speed, field_handler_common, ["Handler_savepoint_rollback"], "Requests per second for a storage engine to roll back to a savepoint."),
+], [get_mysql_status],["Write","Update","Del","Commit"],
+"mysql handler status, collect from \'show global status\' about \'Handler_*\' variables")
 
 mysql_sections = [
 mysql_commands_section,
@@ -1718,9 +1710,7 @@ mysql_innodb_row_lock_section,
 mysql_table_lock_section,
 mysql_innodb_internal_lock_section,
 mysql_slave_section,
-mysql_handler_read_section,
-mysql_handler_ddl_section,
-mysql_handler_transaction_section
+mysql_handler_section
 ]
 mysql_sections_to_show_default = [
 time_section,
