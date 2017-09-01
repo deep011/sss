@@ -46,6 +46,8 @@ status_collect_times=-1 #default is forever
 column_format = '%*s'
 
 
+all_section = 0
+
 segmentation_line_len = 40
 
 
@@ -1195,7 +1197,10 @@ class Server:
             if (section.getName() == section_name):
                 ret = 0
                 if columns_name == None:
-                    ret = section.addColumnsDefaultToShow()
+                    if all_section == 1 or output_type == output_type_open_falcon:
+                        ret = section.addColumnsAllToShow()
+                    else:
+                        ret = section.addColumnsDefaultToShow()
                 elif len(columns_name) == 1 and columns_name[0] == ALL_COLUMNS:
                     ret = section.addColumnsAllToShow()
                 else:
@@ -1214,7 +1219,10 @@ class Server:
 
         ret = 0
         if columns_name == None:
-            ret = section.addColumnsDefaultToShow()
+            if all_section == 1 or output_type == output_type_open_falcon:
+                ret = section.addColumnsAllToShow()
+            else:
+                ret = section.addColumnsDefaultToShow()
         elif len(columns_name) == 1 and columns_name[0] == ALL_COLUMNS:
             ret = section.addColumnsAllToShow()
         else:
@@ -2014,12 +2022,12 @@ StatusColumn("MTable", "db_memtable_usage", 0, column_flags_bytes, field_handler
 "pika disk and memory usage, collect from \'info\'")
 
 pika_keyspace_section = StatusSection("keyspace", "",[
-StatusColumn("keys", "all_key_counts", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of all keys."),
-StatusColumn("string", "string_key_counts", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of string keys."),
-StatusColumn("hash", "hash_key_counts", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of hash keys."),
-StatusColumn("list", "list_key_counts", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of list keys."),
-StatusColumn("zset", "zset_key_counts", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of zset keys."),
-StatusColumn("set", "set_key_counts", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of set keys."),
+StatusColumn("keys", "all_keys_count", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of all keys."),
+StatusColumn("string", "string_keys_count", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of string keys."),
+StatusColumn("hash", "hash_keys_count", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of hash keys."),
+StatusColumn("list", "list_keys_count", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of list keys."),
+StatusColumn("zset", "zset_keys_count", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of zset keys."),
+StatusColumn("set", "set_keys_count", 0, column_flags_none, field_handler_pika_keyspace, [], "Number of set keys."),
 ], [get_pika_status],["keys"],
 "pika keyspace status, collect from \'info\'")
 
@@ -2169,7 +2177,6 @@ if __name__ == "__main__":
         sys.exit(2)
 
     instructions_show = 0
-    all_section = 0
     sections_name = []
     sections_name_addition = []
     sections_name_removed = []
@@ -2376,10 +2383,10 @@ if __name__ == "__main__":
             server.err = 1
             server.errmsg = e.message
 
-    if (output_type == output_type_open_falcon):
+    if output_type == output_type_open_falcon:
         server.uploadToOpenFalcon()
     else:
-        if (speed_calculate_by_remote_monitor_system == 1):
+        if speed_calculate_by_remote_monitor_system == 1:
             speed_calculate_by_remote_monitor_system = 0
 
         server.showStatus()
