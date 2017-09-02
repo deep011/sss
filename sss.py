@@ -1694,6 +1694,8 @@ StatusColumn("Pre", "prepare_per_second", 0, column_flags_speed, field_handler_c
 StatusColumn("Rback", "rollback_per_second", 0, column_flags_speed, field_handler_common, ["Handler_rollback"], "Requests per second for a storage engine to perform a rollback operation."),
 StatusColumn("Spoint", "savepoint_per_second", 0, column_flags_speed, field_handler_common, ["Handler_savepoint"], "Requests per second for a storage engine to place a savepoint."),
 StatusColumn("SPRb", "savepoint_rollback_per_second", 0, column_flags_speed, field_handler_common, ["Handler_savepoint_rollback"], "Requests per second for a storage engine to roll back to a savepoint."),
+StatusColumn("ELock", "external_lock_per_second", 0, column_flags_speed, field_handler_common, ["Handler_external_lock"], "Times per second for each call to its external_lock() function, which generally occurs at the beginning and end of access to a table instance. There might be differences among storage engines. This variable can be used, for example, to discover for a statement that accesses a partitioned table how many partitions were pruned before locking occurred: Check how much the counter increased for the statement, subtract 2 (2 calls for the table itself), then divide by 2 to get the number of partitions locked."),
+StatusColumn("MInit", "mrr_init_per_second", 0, column_flags_speed, field_handler_common, ["Handler_mrr_init"], "Times per second for the server uses a storage engine's own Multi-Range Read implementation for table access.")
 ], [get_mysql_status],["Write","Update","Del","Commit"],
 "mysql handler status, collect from \'show global status\' about \'Handler_*\' variables")
 
