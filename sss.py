@@ -1561,7 +1561,7 @@ def get_mysql_status_for_server(server):
     get_innodb_status(server.cursor, server.status)
     return
 
-mysql_commands_section = StatusSection("cmds","", [
+mysql_command_section = StatusSection("command","", [
 StatusColumn("QPs", "select_per_second", 0, column_flags_speed, field_handler_common, ["Com_select"], "Select commands per second."),
 StatusColumn("DPs", "delete_per_second", 0, column_flags_speed, field_handler_common,["Com_delete"], "Delete commands per second."),
 StatusColumn("IPs", "insert_per_second", 0, column_flags_speed, field_handler_common,["Com_insert"], "Insert commands per second."),
@@ -1700,7 +1700,7 @@ StatusColumn("MInit", "mrr_init_per_second", 0, column_flags_speed, field_handle
 "mysql handler status, collect from \'show global status\' about \'Handler_*\' variables")
 
 mysql_sections = [
-mysql_commands_section,
+mysql_command_section,
 mysql_net_section,
 mysql_threads_section,
 mysql_innodb_redo_log_section,
@@ -1716,7 +1716,7 @@ mysql_handler_section
 ]
 mysql_sections_to_show_default = [
 time_section,
-mysql_commands_section,
+mysql_command_section,
 mysql_net_section,
 mysql_threads_section
 ]
