@@ -1562,14 +1562,14 @@ def get_mysql_status_for_server(server):
     return
 
 mysql_command_section = StatusSection("command","", [
-StatusColumn("QPs", "select_per_second", 0, column_flags_speed, field_handler_common, ["Com_select"], "Select commands per second."),
-StatusColumn("DPs", "delete_per_second", 0, column_flags_speed, field_handler_common,["Com_delete"], "Delete commands per second."),
-StatusColumn("IPs", "insert_per_second", 0, column_flags_speed, field_handler_common,["Com_insert"], "Insert commands per second."),
-StatusColumn("UPs", "update_per_second", 0, column_flags_speed, field_handler_common,["Com_update"], "Update commands per second."),
-StatusColumn("DMPs", "delete_multi_per_second", 0, column_flags_speed, field_handler_common,["Com_delete_multi"], "Delete commands per second that use multiple-table syntax."),
-StatusColumn("UMPs", "update_multi_per_second", 0, column_flags_speed, field_handler_common,["Com_update_multi"], "Update commands per second that use multiple-table syntax."),
-StatusColumn("TPs", "transactions_per_second", 0, column_flags_speed, field_handler_common, ["Com_commit", "Com_rollback"], "Transactions per second."),
-StatusColumn("DIUPs", "dml_per_second", 0, column_flags_speed, field_handler_common,["Com_delete","Com_insert","Com_update"], "DDL(delete+insert+update) commands per second.")
+StatusColumn("QPs", "select_per_second", 0, column_flags_speed, field_handler_common, ["Com_select"], "Select commands per second. Collected from 'Com_select'. If a query result is returned from query cache, the server increments the Qcache_hits status variable, not Com_select."),
+StatusColumn("DPs", "delete_per_second", 0, column_flags_speed, field_handler_common,["Com_delete"], "Delete commands per second. Collected from 'Com_delete'."),
+StatusColumn("IPs", "insert_per_second", 0, column_flags_speed, field_handler_common,["Com_insert"], "Insert commands per second. Collected from 'Com_insert'."),
+StatusColumn("UPs", "update_per_second", 0, column_flags_speed, field_handler_common,["Com_update"], "Update commands per second. Collected from 'Com_update'."),
+StatusColumn("DMPs", "delete_multi_per_second", 0, column_flags_speed, field_handler_common,["Com_delete_multi"], "Delete commands per second that use multiple-table syntax. Collected from 'Com_delete_multi'."),
+StatusColumn("UMPs", "update_multi_per_second", 0, column_flags_speed, field_handler_common,["Com_update_multi"], "Update commands per second that use multiple-table syntax. Collected from 'Com_update_multi'."),
+StatusColumn("TPs", "transactions_per_second", 0, column_flags_speed, field_handler_common, ["Com_commit", "Com_rollback"], "Transactions per second. Collected from the sum of 'Com_commit' and 'Com_rollback'."),
+StatusColumn("DIUPs", "dml_per_second", 0, column_flags_speed, field_handler_common,["Com_delete","Com_insert","Com_update"], "DDL(delete+insert+update) commands per second. Collected from the sum of 'Com_delete', 'Com_insert' and 'Com_update'.")
 ], [get_mysql_status],["TPs","QPs","DPs","IPs","UPs","DIUPs"],
 "mysql commands status, collect from \'show global status\'")
 
