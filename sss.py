@@ -1567,6 +1567,7 @@ StatusColumn("DPs", "delete_per_second", 0, column_flags_speed, field_handler_co
 StatusColumn("IPs", "insert_per_second", 0, column_flags_speed, field_handler_common,["Com_insert"], "Insert commands per second."),
 StatusColumn("UPs", "update_per_second", 0, column_flags_speed, field_handler_common,["Com_update"], "Update commands per second."),
 StatusColumn("DMPs", "delete_multi_per_second", 0, column_flags_speed, field_handler_common,["Com_delete_multi"], "Delete commands per second that use multiple-table syntax."),
+StatusColumn("UMPs", "update_multi_per_second", 0, column_flags_speed, field_handler_common,["Com_update_multi"], "Update commands per second that use multiple-table syntax."),
 StatusColumn("TPs", "transactions_per_second", 0, column_flags_speed, field_handler_common, ["Com_commit", "Com_rollback"], "Transactions per second."),
 StatusColumn("DIUPs", "dml_per_second", 0, column_flags_speed, field_handler_common,["Com_delete","Com_insert","Com_update"], "DDL(delete+insert+update) commands per second.")
 ], [get_mysql_status],["TPs","QPs","DPs","IPs","UPs","DIUPs"],
