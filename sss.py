@@ -1456,18 +1456,38 @@ def get_mysql_status(server, status):
     return
 
 ## The caller need to catch the exception
-def get_slave_status(server, status):
+def get_mysql_replication_status(server, status):
     query= "show slave status"
     server.cursor.execute(query)
 
+    status["role"] = 0
+    status["slave_io_running"] = 0
+    status["slave_sql_running"] = 0
+    status["seconds_behind_master"] = 0
+    status["relay_log_space"] = 0
+
     row = server.cursor.fetchone()
     if (row == None):
-        status["seconds_behind_master"] = 0
-        status["relay_log_space"] = 0
         return
 
+    status["role"] = 1
     row_dict = dict(zip(server.cursor.column_names, row))
-    status["seconds_behind_master"] = row_dict["Seconds_Behind_Master"]
+
+    if row_dict["Slave_IO_Running"] == "Yes":
+        status["slave_io_running"] = 1
+    else:
+        status["slave_io_running"] = 0
+
+    if row_dict["Slave_SQL_Running"] == "Yes":
+        status["slave_sql_running"] = 1
+    else:
+        status["slave_sql_running"] = 0
+
+    if row_dict["Seconds_Behind_Master"] == "NULL" or row_dict["Seconds_Behind_Master"] == None:
+        status["seconds_behind_master"] = -1
+    else:
+        status["seconds_behind_master"] = row_dict["Seconds_Behind_Master"]
+
     status["relay_log_space"] = row_dict["Relay_Log_Space"]
 
     return
@@ -1668,7 +1688,10 @@ StatusColumn("EOWait", "rw_excl_spin_os_waits_per_second", 0, column_flags_speed
 ], [get_innodb_status],[ALL_COLUMNS],
 "mysql innodb internal lock status, collect from \'show engine innodb status\'")
 
-mysql_slave_section = StatusSection("slave", "",[
+mysql_replication_section = StatusSection("repl", "",[
+StatusColumn("r", "role", 1, column_flags_none, field_handler_common, ["role"], "Value is \'0\' if the instance is a master, or \'1\' if the instance is enslaved to a master(it is a slave). Note that a slave can be master of another slave (daisy chaining)."),
+StatusColumn("ir", "slave_io_running", 2, column_flags_none, field_handler_common, ["slave_io_running"], "If the role is a slave, this is the 'Slave_IO_Running', 0 means 'No' and 1 means 'Yes'."),
+StatusColumn("sr", "slave_sql_running", 2, column_flags_none, field_handler_common, ["slave_sql_running"], "If the role is a slave, this is the 'Slave_SQL_Running', 0 means 'No' and 1 means 'Yes'."),
 StatusColumn("Delay", "seconds_behind_master", 0, column_flags_none, field_handler_common, ["seconds_behind_master"], "This is the \'Seconds_Behind_Master\', "
     "based on the timestamps stored in events, measures the time difference in seconds between the slave SQL thread and the "
     "slave I/O thread. If the network connection between master and slave is fast, the slave I/O thread is very close to "
@@ -1677,8 +1700,8 @@ StatusColumn("Delay", "seconds_behind_master", 0, column_flags_none, field_handl
     "the slow-reading slave I/O thread, so Seconds_Behind_Master often shows a value of 0, even if the I/O thread is "
     "late compared to the master. In other words, this column is useful only for fast networks."),
 StatusColumn("RSpace", "relay_log_space", 0, column_flags_bytes, field_handler_common, ["relay_log_space"], "The total combined size of all existing relay log files.")
-], [get_slave_status],[ALL_COLUMNS],
-"mysql slave status, collect from \'show slave status\'")
+], [get_mysql_replication_status],[ALL_COLUMNS],
+"mysql replication status, collect from \'show slave status\'")
 
 mysql_handler_section = StatusSection("handler", "",[
 StatusColumn("Write", "write_per_second", 0, column_flags_speed, field_handler_common, ["Handler_write"], "Requests per second to insert a row in a table."),
@@ -1713,7 +1736,7 @@ mysql_innodb_data_section,
 mysql_innodb_row_lock_section,
 mysql_table_lock_section,
 mysql_innodb_internal_lock_section,
-mysql_slave_section,
+mysql_replication_section,
 mysql_handler_section
 ]
 mysql_sections_to_show_default = [
