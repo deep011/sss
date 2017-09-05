@@ -1924,7 +1924,7 @@ StatusColumn("an", "aof_rewriting", 1, column_flags_none, field_handler_common, 
 "redis persistence status, collect from \'info\'")
 
 redis_replication_section = StatusSection("repl","",[
-StatusColumn("r", "role", 1, column_flags_none, field_handler_redis_replication, ["role"], "Value is \'M\' if the instance is slave of no one(it is a master), or \'S\' if the instance is enslaved to a master(it is a slave). Note that a slave can be master of another slave (daisy chaining)."),
+StatusColumn("r", "role", 1, column_flags_none, field_handler_redis_replication, ["role"], "Value is \'0\' if the instance is slave of no one(it is a master), or \'1\' if the instance is enslaved to a master(it is a slave). Note that a slave can be master of another slave (daisy chaining)."),
 StatusColumn("s", "slaves_count", 1, column_flags_none, field_handler_redis_replication, ["connected_slaves"], "This value means the number of connected slaves."),
 StatusColumn("l", "link_status", 1, column_flags_none, field_handler_redis_replication, ["master_link_status"], "If the role is slave, this value is the status of the replication link, 0 means 'down' and 1 means 'up'")
 ], [get_redis_status],[ALL_COLUMNS],
@@ -2015,21 +2015,26 @@ def field_handler_pika_keyspace(column, status, server):
     return "0"
 
 ## The caller need to catch the exception
-def field_handler_redis_replication(column, status, server):
-    if status["role"] == "master":
-        role = "M"
-        slaves_count = status["connected_slaves"]
-    elif status["role"] == "slave":
-        role = "S"
-        link_status = status["master_link_status"]
+def field_handler_pika_replication(column, status, server):
+    ## init the values assumed this is a master
+    role = 0
+    link_status = 0
+    slaves_count = status["connected_slaves"]
+    if slaves_count < 0:
+        slaves_count = 0
+
+    ## change the values if this is a slave
+    if status["role"] == "slave":
+        role = 1
+        if status["master_link_status"] == "up":
+            link_status = 1
 
     if column.getName() == "r":
         return role
-    elif column.getName() == "s/l":
-        if role == "M":
-            return slaves_count
-        elif role == "S":
-            return link_status
+    elif column.getName() == "s":
+        return slaves_count
+    elif column.getName() == "l":
+        return link_status
 
     return ""
 
@@ -2062,8 +2067,9 @@ StatusColumn("cmds", "commands_per_second", 0, column_flags_speed, field_handler
 "pika command status, collect from \'info\'")
 
 pika_replication_section = StatusSection("repl", "",[
-StatusColumn("r", "", 1, column_flags_string, field_handler_redis_replication, ["role"], "Value is \'M\' if the instance is slave of no one(it is a master), or \'S\' if the instance is enslaved to a master(it is a slave). Note that a slave can be master of another slave (daisy chaining)."),
-StatusColumn("s/l", "", 2, column_flags_string, field_handler_redis_replication, ["connected_slaves","master_link_status"], "If the role is master, it means the number of connected slaves. If the role is slave, it means the status of the link (up/down)")
+StatusColumn("r", "role", 1, column_flags_none, field_handler_pika_replication, ["role"], "Value is \'0\' if the instance is slave of no one(it is a master), or \'1\' if the instance is enslaved to a master(it is a slave). Note that a slave can be master of another slave (daisy chaining)."),
+StatusColumn("s", "slaves_count", 1, column_flags_none, field_handler_pika_replication, ["connected_slaves"], "This value means the number of connected slaves."),
+StatusColumn("l", "link_status", 1, column_flags_none, field_handler_pika_replication, ["master_link_status"], "If the role is slave, this value is the status of the replication link, 0 means 'down' and 1 means 'up'")
 ], [get_pika_status],[ALL_COLUMNS],
 "pika replication status, collect from \'info\'")
 
