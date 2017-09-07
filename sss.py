@@ -36,6 +36,7 @@ host="127.0.0.1"
 port=3306
 user="root"
 password=""
+socket_file=""
 
 hostname=socket.gethostname()
 
@@ -1429,11 +1430,19 @@ class Server:
 ####### Mysql Implement #######
 def mysql_connection_create():
     import mysql.connector
-    mysql_conn = mysql.connector.connect(
-        user=user,
-        password=password,
-        host=host,
-        port=port)
+
+    if len(socket_file) == 0:
+        mysql_conn = mysql.connector.connect(
+            user=user,
+            password=password,
+            host=host,
+            port=port)
+    else:
+        mysql_conn = mysql.connector.connect(
+            user=user,
+            password=password,
+            unix_socket=socket_file)
+        
     return mysql_conn
 
 def mysql_connection_destroy(conn):
@@ -2167,6 +2176,7 @@ def usage():
     print '-i: time interval to show the status, unit is second'
     print '-n: the count of the status to collect, default is forever'
     print '-S: speed is calculated by the remote monitor system, like the open-falcon'
+    print '--socket: the socket file to use for connection'
     print '--falcon: upload the status to the open-falcon, the address is like \''+open_falcon+'\''
     print '--net-face: set the net device face name for os_net_* sections, default is \'lo\''
     print '--disk-name: set the disk device name for os_disk sections, default is \'vda\''
@@ -2201,7 +2211,7 @@ def print_sections_instructions(server):
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvIH:P:u:p:T:s:a:d:o:De:i:n:S', ['help', 'version', 'instructions','falcon=', 'net-face=', 'disk-name=', 'proc-pid='])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvIH:P:u:p:T:s:a:d:o:De:i:n:S', ['help', 'version', 'instructions','socket=','falcon=','net-face=','disk-name=','proc-pid='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -2229,6 +2239,8 @@ if __name__ == "__main__":
             user = arg
         elif opt in ('-p'):
             password = arg
+        elif opt in ('--socket'):
+            socket_file = arg
         elif opt in ('-T'):
             service_type = arg
             find = 0
