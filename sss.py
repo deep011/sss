@@ -348,7 +348,7 @@ class StatusSection:
         return '-'*len_half_left+self.name+'-'*len_half_right
 
 ####### Class StatusColumn #######
-column_flags_none=int('0000',2)  # None flags.
+column_flags_none=int('0000',2)  # None flags. Default the fields are numbers.
 column_flags_speed=int('0001',2)  # The column is shown as rate.
 column_flags_bytes=int('0010',2)  # The column is shown as bytes.
 column_flags_string=int('0100',2)  # The fields are strings, otherwise are numbers; string can't be column_flags_speed.
@@ -394,7 +394,25 @@ class StatusColumn:
         return column_format % (self.getWidth(), self.getName())
 
     def getValue(self, column, status, server):
-        return column.field_handler(column, status, server)
+        value = column.field_handler(column, status, server)
+
+        if column.getFlags() & column_flags_speed:
+            if speed_calculate_by_remote_monitor_system == 1:
+                return value
+
+            interval_time = microsecond_differ_by_datetime(server.current_time, server.last_time)
+            if (interval_time <= 0):
+                interval_time = 1
+
+            value_num = float(value)
+            difference_value = value_num - column.getValueOld()
+            column.setValueOld(value_num)
+            rate = float(difference_value) * 1000000 / float(interval_time)
+            value_str = "%3.1f" % rate
+            return value_str
+
+        return value
+
 
     def setValueOld(self, value):
         self.value_old = value
@@ -419,21 +437,8 @@ def field_handler_common(column, status, server):
         else:
             value_num += long(status[field])
 
-    if column.getFlags()&column_flags_speed:
-        if speed_calculate_by_remote_monitor_system == 1:
-            return str(value_num)
-
-        interval_time = microsecond_differ_by_datetime(server.current_time,server.last_time)
-        if (interval_time <=0):
-            interval_time = 1
-
-        difference_value = value_num - column.getValueOld()
-        column.setValueOld(value_num)
-        rate = float(difference_value) * 1000000 / float(interval_time)
-        value_str = "%3.1f" % rate
-    else:
-        if (column.getFlags()&column_flags_string == 0):
-            value_str = str(value_num)
+    if (column.getFlags()&column_flags_string == 0):
+        value_str = str(value_num)
 
     return value_str
 
@@ -699,10 +704,10 @@ def field_handler_os_cpu(column, status, server):
     return "%3.1f"%(float(value_diff)/float(total_diff) * 100)
 
 os_cpu_section = StatusSection("os_cpu",type_linux,[
-StatusColumn("usr", "user", 2, column_flags_speed, field_handler_os_cpu, ["os_cpu_usr","os_cpu_total"], "Percentage of cpu user+nice time."),
-StatusColumn("sys", "system", 2, column_flags_speed, field_handler_os_cpu, ["os_cpu_sys","os_cpu_total"], "Percentage of cpu system+irq+softirq time."),
-StatusColumn("idl", "idle", 3, column_flags_speed, field_handler_os_cpu, ["os_cpu_idl","os_cpu_total"], "Percentage of cpu idle time."),
-StatusColumn("iow", "iowait", 2, column_flags_speed, field_handler_os_cpu, ["os_cpu_iow","os_cpu_total"], "Percentage of cpu iowait time.")
+StatusColumn("usr", "user", 2, column_flags_string, field_handler_os_cpu, ["os_cpu_usr","os_cpu_total"], "Percentage of cpu user+nice time."),
+StatusColumn("sys", "system", 2, column_flags_string, field_handler_os_cpu, ["os_cpu_sys","os_cpu_total"], "Percentage of cpu system+irq+softirq time."),
+StatusColumn("idl", "idle", 3, column_flags_string, field_handler_os_cpu, ["os_cpu_idl","os_cpu_total"], "Percentage of cpu idle time."),
+StatusColumn("iow", "iowait", 2, column_flags_string, field_handler_os_cpu, ["os_cpu_iow","os_cpu_total"], "Percentage of cpu iowait time.")
 ],[get_os_cpu_status],[ALL_COLUMNS],
 "os cpu status, collect from /proc/stat file")
 
@@ -1442,7 +1447,7 @@ def mysql_connection_create():
             user=user,
             password=password,
             unix_socket=socket_file)
-        
+
     return mysql_conn
 
 def mysql_connection_destroy(conn):
@@ -1784,7 +1789,7 @@ def redis_clean_for_server(server):
 
 ## The caller need to catch the exception
 def redis_get_pidnum_for_server(server):
-    pid = server.redis_conn.info("server")["process_id"]
+    pid = server.redis_conn.info()["process_id"]
     return int(pid)
 
 ## The caller need to catch the exception
@@ -1812,48 +1817,103 @@ def get_redis_status(server, status):
 redis_command_attributes_flags_none=int('0000',2)  # None flags.
 redis_command_attributes_flags_write=int('0001',2)  # Write command flags.
 redis_command_attributes_flags_readonly=int('0010',2)  # Readonly command flags.
-cached_redis_command_details = 0
-## The caller need to catch the exception
-def get_redis_command_status(server, status):
+
+cached_redis_command_details=0
+def init_redis_command_details_if_needed(server):
     global cached_redis_command_details
-    if (server.need_reinit == 1):
-        cached_redis_command_details = 0
+    if cached_redis_command_details == 1:
+        return
 
-    if (cached_redis_command_details == 0):
-        cached_redis_command_details = 1
-        server.redis_commands_details = {}
-        server.redis_commands_calls = {}
+    cached_redis_command_details = 1
+    server.redis_commands_details = {}
+
+    try:
         redis_commands_info = server.redis_conn.execute_command("command")
-        for command_info in redis_commands_info:
-            command_name = command_info[0]
-            command_attributes = command_info[2]
-            if (server.redis_commands_details.has_key(command_name) == False):
-                server.redis_commands_details[command_name] = redis_command_attributes_flags_none
-            for attribute in command_attributes:
-                if (attribute == "readonly"):
-                    server.redis_commands_details[command_name] |= redis_command_attributes_flags_readonly
-                elif (attribute == "write"):
-                    server.redis_commands_details[command_name] |= redis_command_attributes_flags_write
+    except Exception, e:
+        if e.args[0] == "unknown command 'command'":
+            return
+        else:
+            raise
 
+    for command_info in redis_commands_info:
+        command_name = command_info[0]
+        command_attributes = command_info[2]
+        if (server.redis_commands_details.has_key(command_name) == False):
+            server.redis_commands_details[command_name] = redis_command_attributes_flags_none
+        for attribute in command_attributes:
+            if (attribute == "readonly"):
+                server.redis_commands_details[command_name] |= redis_command_attributes_flags_readonly
+            elif (attribute == "write"):
+                server.redis_commands_details[command_name] |= redis_command_attributes_flags_write
+
+    return
+
+redis_command_fetch_method_from_info=0
+redis_command_fetch_method_from_info_commandstats=1
+redis_command_fetch_method=redis_command_fetch_method_from_info_commandstats
+def get_redis_command_status_from_info_commandstats(server, status):
     all_commands_count = 0
     readonly_commands_count = 0
     write_commands_count = 0
-    redis_info_commandstats = server.redis_conn.info("commandstats")
+
+    global redis_command_fetch_method
+
+    try:
+        redis_info_commandstats = server.redis_conn.info("commandstats")
+    except Exception, e:
+        if e.args[0] == "wrong number of arguments for 'info' command":
+            redis_command_fetch_method = redis_command_fetch_method_from_info
+            return
+        else:
+            raise
+
     for key in redis_info_commandstats:
         calls = redis_info_commandstats[key]["calls"]
 
         all_commands_count += calls
         command_name = key.split("_")[1]
-        if server.redis_commands_details[command_name] & redis_command_attributes_flags_readonly:
-            readonly_commands_count += calls
-        elif server.redis_commands_details[command_name] & redis_command_attributes_flags_write:
-            write_commands_count += calls
+        if len(server.redis_commands_details) > 0:
+            if server.redis_commands_details[command_name] & redis_command_attributes_flags_readonly:
+                readonly_commands_count += calls
+            elif server.redis_commands_details[command_name] & redis_command_attributes_flags_write:
+                write_commands_count += calls
 
     status["redis_readonly_commands_count"] = readonly_commands_count
     status["redis_write_commands_count"] = write_commands_count
     status["redis_all_commands_count"] = all_commands_count
 
     return
+
+def get_redis_command_status_from_info(server, status):
+    # Nothing to do, because qps fetched from 'total_commands_processed' from the info command response.
+    return
+
+## The caller need to catch the exception
+def get_redis_command_status(server, status):
+    global cached_redis_command_details
+    global redis_command_fetch_method
+    if (server.need_reinit == 1):
+        cached_redis_command_details = 0
+        redis_command_fetch_method = redis_command_fetch_method_from_info_commandstats
+
+    init_redis_command_details_if_needed(server)
+
+    if redis_command_fetch_method==redis_command_fetch_method_from_info_commandstats:
+        get_redis_command_status_from_info_commandstats(server,status)
+    elif redis_command_fetch_method==redis_command_fetch_method_from_info:
+        get_redis_command_status_from_info(server, status)
+
+    return
+
+## The caller need to catch the exception
+def field_handler_redis_qps(column, status, server):
+    global redis_command_fetch_method
+    if redis_command_fetch_method==redis_command_fetch_method_from_info_commandstats:
+        return status["redis_all_commands_count"]
+    elif redis_command_fetch_method==redis_command_fetch_method_from_info:
+        return status["total_commands_processed"]
+
+    return -1
 
 ## The caller need to catch the exception
 def field_handler_redis_replication(column, status, server):
@@ -1919,10 +1979,10 @@ StatusColumn("evicted", "evicted_per_second", 0, column_flags_speed, field_handl
 "redis key status, collect from \'info\'")
 
 redis_command_section = StatusSection("command", "",[
-StatusColumn("cmds", "commands_per_second", 0, column_flags_speed, field_handler_common, ["redis_all_commands_count"], "Number of commands processed per second."),
+StatusColumn("cmds", "commands_per_second", 0, column_flags_speed, field_handler_redis_qps, ["redis_all_commands_count","total_commands_processed"], "Number of commands processed per second."),
 StatusColumn("reads", "read_commands_per_second", 0, column_flags_speed, field_handler_common, ["redis_readonly_commands_count"], "Number of readonly commands processed per second."),
 StatusColumn("writes", "write_commands_per_second", 0, column_flags_speed, field_handler_common, ["redis_write_commands_count"], "Number of write commands processed per second.")
-], [get_redis_command_status],[ALL_COLUMNS],
+], [get_redis_command_status,get_redis_status],[ALL_COLUMNS],
 "redis command status, collect from \'info commandstat\' and \'command\'")
 
 redis_persistence_section = StatusSection("persis", "",[
@@ -2225,7 +2285,6 @@ if __name__ == "__main__":
         if opt in ('-h','--help'):
             usage()
             sys.exit(1)
-            sys.exit(1)
         elif opt in ('-v','--version'):
             print_version()
             sys.exit(1)
@@ -2239,8 +2298,6 @@ if __name__ == "__main__":
             user = arg
         elif opt in ('-p'):
             password = arg
-        elif opt in ('--socket'):
-            socket_file = arg
         elif opt in ('-T'):
             service_type = arg
             find = 0
@@ -2254,7 +2311,7 @@ if __name__ == "__main__":
                 print "Support types: " + getSupportedServiceTypesName()
                 sys.exit(3)
         elif opt in ('-s'):
-            if (arg == 'all'):
+            if arg == 'all':
                 all_section = 1
             else:
                 sections_name = split_section_name_from_sections_part(arg)
@@ -2284,6 +2341,8 @@ if __name__ == "__main__":
             status_collect_times = int(arg)
         elif opt in ('-S'):
             speed_calculate_by_remote_monitor_system = 1
+        elif opt in ('--socket'):
+            socket_file = arg
         elif opt in ('--falcon'):
             import requests
             import json
