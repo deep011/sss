@@ -424,7 +424,7 @@ class StatusColumn:
 def field_handler_common(column, status, server):
     if (column.getFlags()&column_flags_ratio):
         fields = column.getFields()
-        return "%.3f%%"%(float(status[fields[0]])*100/float(status[fields[1]]))
+        return "%.3f"%(float(status[fields[0]])*100/float(status[fields[1]]))
 
     value_num = 0
     value_str = ''
@@ -457,7 +457,7 @@ def get_status_line(server):
                 value = column.getValue(column,server.status,server)
                 if (column.getFlags()&column_flags_bytes):
                     value = byte2readable(value)
-                elif (column.getFlags()&column_flags_string == 0):
+                elif (column.getFlags()&column_flags_string == 0 and column.getFlags()&column_flags_ratio == 0):
                     value = num2readable(value)
 
                 line += column_format % (column.getWidth(),value)
@@ -488,7 +488,7 @@ def get_status_falcon_json(server):
                 break
 
             try:
-                if column.getFlags()&column_flags_string or column.getFlags()&column_flags_ratio:
+                if column.getFlags()&column_flags_string:
                     continue
 
                 counterType = "GAUGE"
