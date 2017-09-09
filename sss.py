@@ -179,6 +179,23 @@ class StatusSection:
         self.columns_show = []
         return
 
+    def isColumnAlreadyExistByName(self, column_name):
+        for column_in in self.columns:
+            if column_in.getName() == column_name:
+                return 1
+
+        return 0
+
+    def isColumnAlreadyExist(self, column):
+        return self.isColumnAlreadyExistByName(column.getName())
+
+    def addColumn(self, column):
+        if self.isColumnAlreadyExist(column) == 1:
+            return 0
+
+        self.columns.append(column)
+        return 1
+
     def addColumnToShow(self,column_in):
         for column_show in self.columns_show:
             if (column_show.getName() == column_in.getName()):
@@ -1162,7 +1179,7 @@ class Server:
 
     def setDefaultSectionsToShow(self, sections):
         for section in sections:
-            self.addSectionToShow(section.getName())
+            self.addSectionToShowByName(section.getName())
 
         return
 
@@ -1191,7 +1208,26 @@ class Server:
 
         return None
 
-    def addSectionToShow(self, section_name):
+    def addSection(self, section):
+        for section_in in self.sections:
+            if (section.getName() == section_in.getName()):
+                return 0
+
+        self.sections.append(section)
+        return 1
+
+    def removeSectionByName(self, section_name):
+        self.removeSectionFromShowByName(section_name)
+
+        for section_in in self.sections:
+            if (section_name == section_in.getName()):
+                self.sections.remove(section_in)
+                return 1
+
+        return 0
+
+
+    def addSectionToShowByName(self, section_name):
         #section_name maybe contain column names like "section_name[column_name1,column_name2,column_name3]"
         section_part = extract_section_name_and_columns_name_from_section_part(section_name)
         columns_name = None
@@ -1244,7 +1280,7 @@ class Server:
         self.addSectionStatusGetFunctions(section)
         return 1
 
-    def removeSectionFromShow(self, section_name):
+    def removeSectionFromShowByName(self, section_name):
         # section_name maybe contain column names like "section_name[column_name1,column_name2,column_name3]"
         section_part = extract_section_name_and_columns_name_from_section_part(section_name)
         columns_name = None
@@ -1818,14 +1854,14 @@ redis_command_attributes_flags_none=int('0000',2)  # None flags.
 redis_command_attributes_flags_write=int('0001',2)  # Write command flags.
 redis_command_attributes_flags_readonly=int('0010',2)  # Readonly command flags.
 
-cached_redis_command_details=0
-def init_redis_command_details_if_needed(server):
-    global cached_redis_command_details
-    if cached_redis_command_details == 1:
+cached_redis_command_attributes=0
+def init_redis_command_attributes_if_needed(server):
+    global cached_redis_command_attributes
+    if cached_redis_command_attributes == 1:
         return
 
-    cached_redis_command_details = 1
-    server.redis_commands_details = {}
+    cached_redis_command_attributes = 1
+    server.redis_commands_attributes = {}
 
     try:
         redis_commands_info = server.redis_conn.execute_command("command")
@@ -1838,13 +1874,41 @@ def init_redis_command_details_if_needed(server):
     for command_info in redis_commands_info:
         command_name = command_info[0]
         command_attributes = command_info[2]
-        if (server.redis_commands_details.has_key(command_name) == False):
-            server.redis_commands_details[command_name] = redis_command_attributes_flags_none
+        if (server.redis_commands_attributes.has_key(command_name) == False):
+            server.redis_commands_attributes[command_name] = redis_command_attributes_flags_none
         for attribute in command_attributes:
             if (attribute == "readonly"):
-                server.redis_commands_details[command_name] |= redis_command_attributes_flags_readonly
+                server.redis_commands_attributes[command_name] |= redis_command_attributes_flags_readonly
             elif (attribute == "write"):
-                server.redis_commands_details[command_name] |= redis_command_attributes_flags_write
+                server.redis_commands_attributes[command_name] |= redis_command_attributes_flags_write
+
+    return
+
+redis_command_full_section_name = "command_full"
+def get_redis_command_full_section(server, status, command_name, calls):
+    if output_type == output_type_screen or output_type == output_type_file:
+        return
+
+    command_full_section = server.getSectionByName(redis_command_full_section_name)
+    
+    if command_full_section == None:
+        command_full_section = StatusSection(redis_command_full_section_name, type_redis, [], [],[ALL_COLUMNS], 
+            "redis full command status, collect from \'info commandstat\' and \'command\'")
+        server.addSection(command_full_section)
+        server.addSectionToShowByName(redis_command_full_section_name)
+    
+    column_name = command_name
+    field_name = "redis_commands_" + command_name + "_count"
+    
+    if command_full_section.isColumnAlreadyExistByName(column_name) == 0:
+        command_column = StatusColumn(command_name, command_name+"_per_second", 0, column_flags_speed, field_handler_common,
+            [field_name],
+            "Number of "+command_name+" command processed per second.")
+        
+        command_full_section.addColumn(command_column)
+        command_full_section.addColumnToShowByName(column_name)
+
+    status[field_name] = calls
 
     return
 
@@ -1872,15 +1936,18 @@ def get_redis_command_status_from_info_commandstats(server, status):
 
         all_commands_count += calls
         command_name = key.split("_")[1]
-        if len(server.redis_commands_details) > 0:
-            if server.redis_commands_details[command_name] & redis_command_attributes_flags_readonly:
+
+        get_redis_command_full_section(server, status, command_name, calls)
+
+        if len(server.redis_commands_attributes) > 0:
+            if server.redis_commands_attributes[command_name] & redis_command_attributes_flags_readonly:
                 readonly_commands_count += calls
-            elif server.redis_commands_details[command_name] & redis_command_attributes_flags_write:
+            elif server.redis_commands_attributes[command_name] & redis_command_attributes_flags_write:
                 write_commands_count += calls
 
-    status["redis_readonly_commands_count"] = readonly_commands_count
-    status["redis_write_commands_count"] = write_commands_count
-    status["redis_all_commands_count"] = all_commands_count
+    status["redis_commands_readonly_count"] = readonly_commands_count
+    status["redis_commands_write_count"] = write_commands_count
+    status["redis_commands_all_count"] = all_commands_count
 
     return
 
@@ -1890,13 +1957,14 @@ def get_redis_command_status_from_info(server, status):
 
 ## The caller need to catch the exception
 def get_redis_command_status(server, status):
-    global cached_redis_command_details
+    global cached_redis_command_attributes
     global redis_command_fetch_method
     if (server.need_reinit == 1):
-        cached_redis_command_details = 0
+        cached_redis_command_attributes = 0
         redis_command_fetch_method = redis_command_fetch_method_from_info_commandstats
+        server.removeSectionByName(redis_command_full_section_name)
 
-    init_redis_command_details_if_needed(server)
+    init_redis_command_attributes_if_needed(server)
 
     if redis_command_fetch_method==redis_command_fetch_method_from_info_commandstats:
         get_redis_command_status_from_info_commandstats(server,status)
@@ -1909,7 +1977,7 @@ def get_redis_command_status(server, status):
 def field_handler_redis_qps(column, status, server):
     global redis_command_fetch_method
     if redis_command_fetch_method==redis_command_fetch_method_from_info_commandstats:
-        return status["redis_all_commands_count"]
+        return status["redis_commands_all_count"]
     elif redis_command_fetch_method==redis_command_fetch_method_from_info:
         return status["total_commands_processed"]
 
@@ -1979,9 +2047,9 @@ StatusColumn("evicted", "evicted_per_second", 0, column_flags_speed, field_handl
 "redis key status, collect from \'info\'")
 
 redis_command_section = StatusSection("command", "",[
-StatusColumn("cmds", "commands_per_second", 0, column_flags_speed, field_handler_redis_qps, ["redis_all_commands_count","total_commands_processed"], "Number of commands processed per second."),
-StatusColumn("reads", "read_commands_per_second", 0, column_flags_speed, field_handler_common, ["redis_readonly_commands_count"], "Number of readonly commands processed per second."),
-StatusColumn("writes", "write_commands_per_second", 0, column_flags_speed, field_handler_common, ["redis_write_commands_count"], "Number of write commands processed per second.")
+StatusColumn("cmds", "commands_per_second", 0, column_flags_speed, field_handler_redis_qps, ["redis_commands_all_count","total_commands_processed"], "Number of commands processed per second."),
+StatusColumn("reads", "read_commands_per_second", 0, column_flags_speed, field_handler_common, ["redis_commands_readonly_count"], "Number of readonly commands processed per second."),
+StatusColumn("writes", "write_commands_per_second", 0, column_flags_speed, field_handler_common, ["redis_commands_write_count"], "Number of write commands processed per second.")
 ], [get_redis_command_status,get_redis_status],[ALL_COLUMNS],
 "redis command status, collect from \'info commandstat\' and \'command\'")
 
@@ -2381,7 +2449,7 @@ if __name__ == "__main__":
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
             for section in mysql_sections:
-                server.addSectionToShow(section.getName())
+                server.addSectionToShowByName(section.getName())
         elif (len(sections_name) == 0):
             if output_type == output_type_screen or output_type == output_type_file:
                 sections_to_show_default = mysql_sections_to_show_default
@@ -2398,7 +2466,7 @@ if __name__ == "__main__":
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
             for section in redis_sections:
-                server.addSectionToShow(section.getName())
+                server.addSectionToShowByName(section.getName())
         elif (len(sections_name) == 0):
             if output_type == output_type_screen or output_type == output_type_file:
                 sections_to_show_default = redis_sections_to_show_default
@@ -2415,7 +2483,7 @@ if __name__ == "__main__":
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
             for section in pika_sections:
-                server.addSectionToShow(section.getName())
+                server.addSectionToShowByName(section.getName())
         elif (len(sections_name) == 0):
             if output_type == output_type_screen or output_type == output_type_file:
                 sections_to_show_default = pika_sections_to_show_default
@@ -2432,7 +2500,7 @@ if __name__ == "__main__":
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
             for section in memcached_sections:
-                server.addSectionToShow(section.getName())
+                server.addSectionToShowByName(section.getName())
         elif (len(sections_name) == 0):
             if output_type == output_type_screen or output_type == output_type_file:
                 sections_to_show_default = memcached_sections_to_show_default
@@ -2452,21 +2520,21 @@ if __name__ == "__main__":
         if all_section == 1:
             break
 
-        ret = server.addSectionToShow(section_name)
+        ret = server.addSectionToShowByName(section_name)
         if (ret < 0):
             print "Section '%s' is not supported for %s" % (section_name, server.getType())
             print server.getType() + " supported sections: " + server.getSupportedSectionsName()
             sys.exit(3)
 
     for section_name in sections_name_addition:
-        ret = server.addSectionToShow(section_name)
+        ret = server.addSectionToShowByName(section_name)
         if (ret < 0):
             print "Section '%s' is not supported for %s" % (section_name, server.getType())
             print server.getType() + " supported sections: " + server.getSupportedSectionsName()
             sys.exit(3)
 
     for section_name in sections_name_removed:
-        ret = server.removeSectionFromShow(section_name)
+        ret = server.removeSectionFromShowByName(section_name)
         if (ret < 0):
             print "Section '%s' is not supported for %s" % (section_name, server.getType())
             print server.getType() + " supported sections: " + server.getSupportedSectionsName()
