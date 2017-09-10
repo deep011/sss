@@ -93,8 +93,47 @@ def microsecond_differ_by_datetime(datetime_new, datetime_old):
     datetime_differ = datetime_new - datetime_old
     return datetime_differ.days*24*3600*1000000 + datetime_differ.seconds*1000000 + datetime_differ.microseconds
 
+def get_falcon_metric_name_header(section_name):
+    return service_type + "." + section_name
+
+def get_falcon_tags_string(section_type):
+    tags = ""
+    if section_type == type_linux:
+        tags += "linux"
+    else:
+        tags += "port=" + str(port)
+
+    return tags
+
+def append_server_alive_condition_to_falcon_json(server, status_json, server_alive):
+    tags = get_falcon_tags_string(service_type)
+    metric_name = get_falcon_metric_name_header("alive")
+
+    status_json.append({
+        "endpoint": hostname,
+        "metric": metric_name,
+        "timestamp": int(server.getCurrentTimeStamp()),
+        "step": status_collect_interval,
+        "value": float(server_alive),
+        "counterType": "GAUGE",
+        "tags": tags,
+    },)
+
+    return
+
 errlog_file_name=""
-def errlog(server, errstr):
+def errlog(server, errstr, need_check_server_alive):
+    if need_check_server_alive and server.check_alive != None:
+        try:
+            server_alive = server.check_alive(server)
+            if output_type == output_type_open_falcon:
+                status_json = []
+                append_server_alive_condition_to_falcon_json(server, status_json, server_alive)
+                output(server, json.dumps(status_json))
+        except Exception, e:
+            errlog(server, e.message, False)
+
+
     if len(errlog_file_name) == 0:
         print server.getCurrentTimeFormattedString() + " " + errstr
     else:
@@ -112,9 +151,9 @@ def output(server, content):
     elif output_type == output_type_open_falcon:
         r = requests.post(open_falcon, data=content)
         if r.text != "success":
-            errlog(server, "ERROR: "+r.text)
+            errlog(server, "ERROR: "+r.text, False)
         else:
-            errlog(server, r.text)
+            errlog(server, r.text, False)
     else:
         return
 
@@ -463,11 +502,11 @@ def get_status_line(server):
     line = ""
 
     for section in server.sections_to_show:
-        if (server.err > 0):
+        if server.err > 0:
             break
 
         for column in section.getColumnsToShow():
-            if (server.err > 0):
+            if server.err > 0:
                 break
 
             try:
@@ -483,25 +522,25 @@ def get_status_line(server):
                 server.errmsg = e.message
 
         line += '|'
+
+    if server.err > 0:
+        return None
+
     return line
 
 def get_status_falcon_json(server):
     status_json = []
 
     for section in server.sections_to_show:
-        if (server.err > 0):
+        if server.err > 0:
             break
 
-        tags = ""
-        if section.getType == type_linux:
-            tags += "linux"
-        else:
-            tags += "port=" + str(port)
+        tags = get_falcon_tags_string(section.getType())
 
-        metric_name_header = service_type + "." + section.getName() + "."
+        metric_name_header = get_falcon_metric_name_header(section.getName())
 
         for column in section.getColumnsToShow():
-            if (server.err > 0):
+            if server.err > 0:
                 break
 
             try:
@@ -514,9 +553,9 @@ def get_status_falcon_json(server):
 
                 metric_name = metric_name_header
                 if len(column.getDetailName()) == 0:
-                    metric_name += column.getName()
+                    metric_name += "." + column.getName()
                 else:
-                    metric_name += column.getDetailName()
+                    metric_name += "." + column.getDetailName()
 
                 status_json.append({
                     "endpoint": hostname,
@@ -530,6 +569,12 @@ def get_status_falcon_json(server):
             except Exception, e:
                 server.err = 1
                 server.errmsg = e.message
+
+    if (server.err > 0):
+        return None
+
+    # No errors means server is alive.
+    append_server_alive_condition_to_falcon_json(server, status_json, 1)
 
     return json.dumps(status_json)
 
@@ -1083,6 +1128,7 @@ class Server:
         self.err = 0
         self.errmsg = ""
         self.need_reinit = 0
+        self.check_alive = None    #check_alive()
 
     def getName(self):
         return self.name
@@ -1354,7 +1400,7 @@ class Server:
         self.getStatus()
         get_status_line(self)
         if (self.err > 0):
-            errlog(self, "Exception: " + self.errmsg)
+            errlog(self, "Exception: " + self.errmsg, True)
 
         counter = -1
         while (1):
@@ -1384,7 +1430,7 @@ class Server:
                 except Exception, e:
                     self.err = 1
                     self.errmsg = e.message
-                    errlog(self, "Exception: " + self.errmsg)
+                    errlog(self, "Exception: " + self.errmsg, True)
                     continue
 
                 # Reinit the first status
@@ -1393,13 +1439,13 @@ class Server:
                 time.sleep(0.1)
                 self.need_reinit = 0
                 if self.err > 0:
-                    errlog(self, "Exception: " + self.errmsg)
+                    errlog(self, "Exception: " + self.errmsg, True)
                     continue
 
             self.getStatus()
             status_line = get_status_line(self)
             if self.err > 0:
-                errlog(self, "Exception: "+self.errmsg)
+                errlog(self, "Exception: " + self.errmsg, True)
                 continue
 
             output(self, status_line)
@@ -1410,14 +1456,14 @@ class Server:
         # Init the first status
         self.getStatus()
         if (self.err > 0):
-            errlog(self, "Exception: " + self.errmsg)
+            errlog(self, "Exception: " + self.errmsg, True)
 
         # If speed calculate by the  remote monitor system, and status only collect one time,
         # we just return the status without sleep.
         if speed_calculate_by_remote_monitor_system == 1 and status_collect_times == 1:
             status_line = get_status_falcon_json(self)
             if self.err > 0:
-                errlog(self, "Exception: " + self.errmsg)
+                errlog(self, "Exception: " + self.errmsg, True)
                 return
 
             output(self, status_line)
@@ -1447,7 +1493,7 @@ class Server:
                 except Exception, e:
                     self.err = 1
                     self.errmsg = e.message
-                    errlog(self, "Exception: " + self.errmsg)
+                    errlog(self, "Exception: " + self.errmsg, True)
                     continue
 
                 # Reinit the first status
@@ -1455,13 +1501,13 @@ class Server:
                 time.sleep(0.1)
                 self.need_reinit = 0
                 if self.err > 0:
-                    errlog(self, "Exception: " + self.errmsg)
+                    errlog(self, "Exception: " + self.errmsg, True)
                     continue
 
             self.getStatus()
             status_line = get_status_falcon_json(self)
             if self.err > 0:
-                errlog(self, "Exception: " + self.errmsg)
+                errlog(self, "Exception: " + self.errmsg, True)
                 continue
 
             output(self, status_line)
@@ -1496,6 +1542,23 @@ def get_mysql_handler(conn):
 def put_mysql_handler(handler):
     handler.close()
     return
+
+def check_mysql_alive(server):
+    alive = 0
+    try:
+        query= "select 1"
+        conn = mysql_connection_create()
+        handler = get_mysql_handler(conn)
+        handler.execute(query)
+        for (value, ) in handler:
+            alive = value
+            break
+    except Exception, e:
+        return alive
+
+    put_mysql_handler(handler)
+    mysql_connection_destroy(conn)
+    return alive
 
 ## The caller need to catch the exception
 def get_mysql_status(server, status):
@@ -2446,6 +2509,7 @@ if __name__ == "__main__":
                         mysql_clean_for_server,
                         mysql_get_pidnum_for_server,
                         mysql_sections)
+        server.check_alive = check_mysql_alive
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
             for section in mysql_sections:
