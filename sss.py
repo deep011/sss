@@ -1862,18 +1862,15 @@ mysql_threads_section
 ####### Redis Implement #######
 def redis_connection_create():
     import redis.connection
-    try:
-        redis_conn = redis.StrictRedis(
-            host=host,
-            port=port,
-            password=password)
-    except Exception,e:
-        server.err = 1
-        server.errmsg = e.message
+    redis_conn = redis.StrictRedis(
+        host=host,
+        port=port,
+        password=password)
 
     return redis_conn
 
 def redis_connection_destroy(conn):
+    conn.connection_pool.disconnect()
     return
 
 ## The caller need to catch the exception
@@ -1885,6 +1882,19 @@ def redis_initialize_for_server(server):
 def redis_clean_for_server(server):
     redis_connection_destroy(server.redis_conn)
     return
+
+def check_redis_alive(server):
+    alive = 0
+    try:
+        conn = redis_connection_create()
+        r = conn.ping()
+        if r == True:
+            alive = 1
+    except Exception, e:
+        return alive
+
+    redis_connection_destroy(conn)
+    return alive
 
 ## The caller need to catch the exception
 def redis_get_pidnum_for_server(server):
@@ -2527,6 +2537,7 @@ if __name__ == "__main__":
                         redis_clean_for_server,
                         redis_get_pidnum_for_server,
                         redis_sections)
+        server.check_alive = check_redis_alive
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
             for section in redis_sections:
