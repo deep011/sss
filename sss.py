@@ -2555,6 +2555,7 @@ if __name__ == "__main__":
                         pika_clean_for_server,
                         pika_get_pidnum_for_server,
                         pika_sections)
+        server.check_alive = check_redis_alive    #Use the redis check alive function.
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
             for section in pika_sections:
