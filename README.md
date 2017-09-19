@@ -2,13 +2,13 @@
 
 **sss** (abbreviation "Show-Service-Status") is a convenient tool to Show the Service Status.
 
-By now, sss support for os(linux), mysql, redis and memcached.
+By now, sss support for os(linux), mysql, redis, pika and memcached.
 
 ## Usage
 
     $ python sss.py -h
     python sss.py [options]
-
+    
     options:
     -h,--help: show this help message
     -v,--version: show the version
@@ -16,23 +16,31 @@ By now, sss support for os(linux), mysql, redis and memcached.
     -P: target port
     -u: target service user
     -p: target user password
-    -T: target service type, default is os
+    -T: target service type, default is linux
     -s: sections to show, use comma to split
     -a: addition sections to show, use comma to split
     -d: removed sections for the showing, use comma to split
     -I,--instructions: show the support sections' instructions
     -o: output the status to this file
     -D: separate output files by day, suffix of the file name is '_yyyy-mm-dd'
-    -i: interval time to show the status, unit is second
+    -e: output error message to this file
+    -i: time interval to show the status, unit is second
+    -n: the count of the status to collect, default is forever
+    -S: speed is calculated by the remote monitor system, like the open-falcon
+    --socket: the socket file to use for connection
+    --falcon: upload the status to the open-falcon, the address is like 'http://127.0.0.1:22230/v1/push'
     --net-face: set the net device face name for os_net_* sections, default is 'lo'
     --disk-name: set the disk device name for os_disk sections, default is 'vda'
     --proc-pid: set the process pid number for proc_* sections, default is 0
+    
+    
+    Support services: linux mysql redis pika memcached
     
 ## Dependence
 
 Mysql need [mysql-connector-python](https://dev.mysql.com/downloads/connector/python/)
 
-Redis need [redis-py](https://github.com/andymccurdy/redis-py)
+Redis,pika need [redis-py](https://github.com/andymccurdy/redis-py)
 
 Memcached need [python-memcached](https://github.com/linsomniac/python-memcached)
 
