@@ -2344,13 +2344,22 @@ StatusColumn("out", "outgoing_bytes_per_second", 0, column_flags_bytes|column_fl
 ], [get_memcached_status],[ALL_COLUMNS],
 "memcached network status, collect from \'stats\'")
 
+memcached_command_section = StatusSection("command", "",[
+StatusColumn("get", "", 0, column_flags_speed, field_handler_common, ["cmd_get"], "Number of retrieval commands processed per second. Retrieval commands include get, gets and so on."),
+StatusColumn("set", "", 0, column_flags_speed, field_handler_common, ["cmd_set"], "Number of storage commands processed per second. Storage commands include set, add, replace, append, prepend, cas and so on.")
+], [get_memcached_status],[ALL_COLUMNS],
+"memcached command status, collect from \'stats\'")
+
 memcached_sections = [
 memcached_connection_section,
-memcached_net_section
+memcached_net_section,
+memcached_command_section
 ]
 
 memcached_sections_to_show_default = [
 time_section,
+proc_cpu_section,
+memcached_command_section,
 memcached_connection_section,
 memcached_net_section
 ]
