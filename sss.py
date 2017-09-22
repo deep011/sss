@@ -1,5 +1,18 @@
 #!/usr/bin/python
 
+#Copyright (c) 2015, 2020. All rights reserved.
+#
+#This program is free software; you can redistribute it and/or modify
+#it under the Apache License 2.0 License.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#Author List
+# name  email                 github                      blog
+# deep  ieshen.zheng@163.com  https://github.com/deep011  https://deep011.github.io/
+
 import time
 import datetime
 import getopt
@@ -1514,6 +1527,7 @@ class Server:
 
         return
 
+# Mysql monitor implemented by deep
 ####### Mysql Implement #######
 def mysql_connection_create():
     import mysql.connector
@@ -1859,6 +1873,7 @@ mysql_net_section,
 mysql_threads_section
 ]
 
+# Redis monitor implemented by deep
 ####### Redis Implement #######
 def redis_connection_create():
     import redis.connection
@@ -2161,6 +2176,7 @@ redis_net_section,
 redis_connection_section
 ]
 
+# Pika monitor implemented by deep
 ####### Pika Implement #######
 def pika_connection_create():
     import redis.connection
@@ -2300,6 +2316,7 @@ pika_keyspace_section,
 pika_replication_section
 ]
 
+# Memcached monitor implemented by deep
 ####### Memcached Implement #######
 def memcached_connection_create():
     import memcache
