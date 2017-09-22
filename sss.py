@@ -2365,8 +2365,9 @@ memcached_command_section = StatusSection("command", "",[
 StatusColumn("get", "", 0, column_flags_speed, field_handler_common, ["cmd_get"], "Number of retrieval commands processed per second. Retrieval commands include get, gets and so on."),
 StatusColumn("set", "", 0, column_flags_speed, field_handler_common, ["cmd_set"], "Number of storage commands processed per second. Storage commands include set, add, replace, append, prepend, cas and so on."),
 StatusColumn("del", "delete", 0, column_flags_speed, field_handler_common, ["delete_misses", "delete_hits"], "Number of delete commands processed per second."),
-StatusColumn("ari", "arithmetic", 0, column_flags_speed, field_handler_common, ["incr_misses", "incr_hits", "decr_misses", "decr_hits"], "Number of arithmetic commands processed per second. Arithmetic commands include incr, decr and so on")
-], [get_memcached_status],[ALL_COLUMNS],
+StatusColumn("ari", "arithmetic", 0, column_flags_speed, field_handler_common, ["incr_misses", "incr_hits", "decr_misses", "decr_hits"], "Number of arithmetic commands processed per second. Arithmetic commands include incr, decr and so on"),
+StatusColumn("flu", "flush_all", 0, column_flags_speed, field_handler_common, ["cmd_flush"], "Number of flush_all commands processed per second.")
+], [get_memcached_status],["get","set","del","ari"],
 "memcached command status, collect from \'stats\'")
 
 memcached_sections = [
