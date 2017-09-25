@@ -420,11 +420,12 @@ class StatusSection:
         return '-'*len_half_left+self.name+'-'*len_half_right
 
 ####### Class StatusColumn #######
-column_flags_none=int('0000',2)  # None flags. Default the fields are numbers.
-column_flags_speed=int('0001',2)  # The column is shown as rate.
-column_flags_bytes=int('0010',2)  # The column is shown as bytes.
-column_flags_string=int('0100',2)  # The fields are strings, otherwise are numbers; string can't be column_flags_speed.
-column_flags_ratio=int('1000',2)  # The column is shown as ratio.
+column_flags_none=int('00000000',2)     # None flags. Default the fields are numbers.
+column_flags_speed=int('00000001',2)    # The column is shown as speed.
+column_flags_bytes=int('00000010',2)    # The column is shown as bytes.
+column_flags_string=int('00000100',2)   # The fields are strings, otherwise are numbers; string can't be column_flags_speed.
+column_flags_ratio=int('00001000',2)    # The column is shown as ratio.
+column_flags_speed_then_ratio=int('00010000',2)    # The column is calculated by speed and then by ratio. Like (a_time2 - a_time1)/(b_time2 - b_time2)
 class StatusColumn:
     def __init__(self, name, detail_name, blanks, flags, field_handler, fields, instructions):
         self.name = name
@@ -561,6 +562,8 @@ def get_status_falcon_json(server):
 
             try:
                 if column.getFlags()&column_flags_string:
+                    continue
+                if speed_calculate_by_remote_monitor_system == 1 and column.getFlags()&column_flags_speed_then_ratio:
                     continue
 
                 counterType = "GAUGE"
@@ -2352,6 +2355,33 @@ def get_memcached_status(server, status):
         status[key] = memcached_info[key]
     return
 
+## The caller need to catch the exception
+def field_handler_memcached_hits_percentage(column, status, server):
+    fields = column.getFields()
+
+    values = []
+    for i in range(0, len(fields)):
+        values.append(status[fields[i]])
+
+    obj = column.getObjOld()
+    if obj == None:
+        column.setObjOld(values)
+        return '0'
+
+    values_diff = []
+    for i in range(0, len(fields)):
+        values_diff.append(long(values[i]) - long(obj[i]))
+
+    column.setObjOld(values)
+    all_diff = float(0)
+    for i in range(0, len(fields)):
+        all_diff += float(values_diff[i])
+
+    if all_diff == 0:
+        return '0'
+
+    return "%3.1f"%(float(values_diff[0])/all_diff * 100)
+
 memcached_connection_section = StatusSection("connection", "",[
 StatusColumn("conns", "connected_clients", 0, column_flags_none, field_handler_common, ["curr_connections"], "Counts for connected clients."),
 StatusColumn("receive", "received_per_second", 0, column_flags_speed, field_handler_common, ["total_connections"], "Number of connections accepted by the server per second.")
@@ -2374,18 +2404,20 @@ StatusColumn("flu", "flush_all", 0, column_flags_speed, field_handler_common, ["
 "memcached command status, collect from \'stats\'")
 
 memcached_command_detail_section = StatusSection("command_detail", "",[
-StatusColumn("get_h", "get_hits", 0, column_flags_speed, field_handler_common, ["get_hits"], "Number of retrieval commands hits per second. Retrieval commands include get, gets and so on."),
-StatusColumn("get_m", "get_misses", 0, column_flags_speed, field_handler_common, ["get_misses"], "Number of retrieval commands misses per second. Retrieval commands include get, gets and so on."),
-StatusColumn("del_h", "delete_hits", 0, column_flags_speed, field_handler_common, ["delete_hits"], "Number of delete commands hits per second."),
-StatusColumn("del_m", "delete_misses", 0, column_flags_speed, field_handler_common, ["delete_misses"], "Number of delete commands misses per second."),
-StatusColumn("inc_h", "incr_hits", 0, column_flags_speed, field_handler_common, ["incr_hits"], "Number of incr commands hits per second."),
-StatusColumn("inc_m", "incr_misses", 0, column_flags_speed, field_handler_common, ["incr_misses"], "Number of incr commands misses per second."),
-StatusColumn("dec_h", "decr_hits", 0, column_flags_speed, field_handler_common, ["decr_hits"], "Number of decr commands hits per second."),
-StatusColumn("dec_m", "decr_misses", 0, column_flags_speed, field_handler_common, ["decr_misses"], "Number of decr commands misses per second."),
-StatusColumn("cas_h", "cas_hits", 0, column_flags_speed, field_handler_common, ["cas_hits"], "Number of cas commands hits per second."),
-StatusColumn("cas_m", "cas_misses", 0, column_flags_speed, field_handler_common, ["cas_misses"], "Number of cas commands misses per second."),
-StatusColumn("cas_b", "cas_badval", 0, column_flags_speed, field_handler_common, ["cas_badval"], "Number of cas commands bad values per second.")
-], [get_memcached_status],["get_h","get_m"],
+StatusColumn("GetH", "get_hits", 0, column_flags_speed, field_handler_common, ["get_hits"], "Number of retrieval commands hits per second. Retrieval commands include get, gets and so on."),
+StatusColumn("GetM", "get_misses", 0, column_flags_speed, field_handler_common, ["get_misses"], "Number of retrieval commands misses per second. Retrieval commands include get, gets and so on."),
+StatusColumn("DelH", "delete_hits", 0, column_flags_speed, field_handler_common, ["delete_hits"], "Number of delete commands hits per second."),
+StatusColumn("DelM", "delete_misses", 0, column_flags_speed, field_handler_common, ["delete_misses"], "Number of delete commands misses per second."),
+StatusColumn("IncH", "incr_hits", 0, column_flags_speed, field_handler_common, ["incr_hits"], "Number of incr commands hits per second."),
+StatusColumn("IncM", "incr_misses", 0, column_flags_speed, field_handler_common, ["incr_misses"], "Number of incr commands misses per second."),
+StatusColumn("DecH", "decr_hits", 0, column_flags_speed, field_handler_common, ["decr_hits"], "Number of decr commands hits per second."),
+StatusColumn("DecM", "decr_misses", 0, column_flags_speed, field_handler_common, ["decr_misses"], "Number of decr commands misses per second."),
+StatusColumn("CasH", "cas_hits", 0, column_flags_speed, field_handler_common, ["cas_hits"], "Number of cas commands hits per second."),
+StatusColumn("CasM", "cas_misses", 0, column_flags_speed, field_handler_common, ["cas_misses"], "Number of cas commands misses per second."),
+StatusColumn("CasB", "cas_badval", 0, column_flags_speed, field_handler_common, ["cas_badval"], "Number of cas commands bad values per second."),
+StatusColumn("GetPct", "get_percentage", 0, column_flags_speed_then_ratio, field_handler_memcached_hits_percentage, ["cmd_get", "cmd_set", "incr_misses", "incr_hits", "decr_misses", "decr_hits"], "Percentage of retrieval commands among all the retrieval, storage and arithmetic commands per second."),
+StatusColumn("GetHPct", "get_hits_percentage", 0, column_flags_speed_then_ratio, field_handler_memcached_hits_percentage, ["get_hits","get_misses"], "Hits percentage of retrieval commands per second. Retrieval commands include get, gets and so on.")
+], [get_memcached_status],["GetPct","GetHPct"],
 "memcached command detail status, collect from \'stats\'")
 
 memcached_sections = [
