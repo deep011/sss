@@ -2370,16 +2370,24 @@ StatusColumn("flu", "flush_all", 0, column_flags_speed, field_handler_common, ["
 ], [get_memcached_status],["get","set","del","ari"],
 "memcached command status, collect from \'stats\'")
 
+memcached_command_detail_section = StatusSection("command_detail", "",[
+StatusColumn("get_h", "get_hits", 0, column_flags_speed, field_handler_common, ["get_hits"], "Number of retrieval commands hits per second. Retrieval commands include get, gets and so on."),
+StatusColumn("get_m", "get_misses", 0, column_flags_speed, field_handler_common, ["get_misses"], "Number of retrieval commands misses per second. Retrieval commands include get, gets and so on."),
+], [get_memcached_status],[ALL_COLUMNS],
+"memcached command detail status, collect from \'stats\'")
+
 memcached_sections = [
 memcached_connection_section,
 memcached_net_section,
-memcached_command_section
+memcached_command_section,
+memcached_command_detail_section
 ]
 
 memcached_sections_to_show_default = [
 time_section,
 proc_cpu_section,
 memcached_command_section,
+memcached_command_detail_section,
 memcached_connection_section,
 memcached_net_section
 ]
