@@ -2374,7 +2374,9 @@ memcached_command_detail_section = StatusSection("command_detail", "",[
 StatusColumn("get_h", "get_hits", 0, column_flags_speed, field_handler_common, ["get_hits"], "Number of retrieval commands hits per second. Retrieval commands include get, gets and so on."),
 StatusColumn("get_m", "get_misses", 0, column_flags_speed, field_handler_common, ["get_misses"], "Number of retrieval commands misses per second. Retrieval commands include get, gets and so on."),
 StatusColumn("del_h", "delete_hits", 0, column_flags_speed, field_handler_common, ["delete_hits"], "Number of delete commands hits per second."),
-StatusColumn("del_m", "delete_misses", 0, column_flags_speed, field_handler_common, ["delete_misses"], "Number of delete commands misses per second.")
+StatusColumn("del_m", "delete_misses", 0, column_flags_speed, field_handler_common, ["delete_misses"], "Number of delete commands misses per second."),
+StatusColumn("inc_h", "incr_hits", 0, column_flags_speed, field_handler_common, ["incr_hits"], "Number of incr commands hits per second."),
+StatusColumn("inc_m", "incr_misses", 0, column_flags_speed, field_handler_common, ["incr_misses"], "Number of incr commands misses per second.")
 ], [get_memcached_status],[ALL_COLUMNS],
 "memcached command detail status, collect from \'stats\'")
 
