@@ -2376,7 +2376,9 @@ StatusColumn("get_m", "get_misses", 0, column_flags_speed, field_handler_common,
 StatusColumn("del_h", "delete_hits", 0, column_flags_speed, field_handler_common, ["delete_hits"], "Number of delete commands hits per second."),
 StatusColumn("del_m", "delete_misses", 0, column_flags_speed, field_handler_common, ["delete_misses"], "Number of delete commands misses per second."),
 StatusColumn("inc_h", "incr_hits", 0, column_flags_speed, field_handler_common, ["incr_hits"], "Number of incr commands hits per second."),
-StatusColumn("inc_m", "incr_misses", 0, column_flags_speed, field_handler_common, ["incr_misses"], "Number of incr commands misses per second.")
+StatusColumn("inc_m", "incr_misses", 0, column_flags_speed, field_handler_common, ["incr_misses"], "Number of incr commands misses per second."),
+StatusColumn("dec_h", "decr_hits", 0, column_flags_speed, field_handler_common, ["decr_hits"], "Number of decr commands hits per second."),
+StatusColumn("dec_m", "decr_misses", 0, column_flags_speed, field_handler_common, ["decr_misses"], "Number of decr commands misses per second.")
 ], [get_memcached_status],[ALL_COLUMNS],
 "memcached command detail status, collect from \'stats\'")
 
