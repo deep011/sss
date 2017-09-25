@@ -2419,7 +2419,8 @@ StatusColumn("GetPct", "get_percentage", 0, column_flags_speed_then_ratio, field
 StatusColumn("GetHPct", "get_hits_percentage", 0, column_flags_speed_then_ratio, field_handler_memcached_hits_percentage, ["get_hits","get_misses"], "Hits percentage of retrieval commands per second. Retrieval commands include get, gets and so on."),
 StatusColumn("DelHPct", "delete_hits_percentage", 0, column_flags_speed_then_ratio, field_handler_memcached_hits_percentage, ["delete_hits","delete_misses"], "Hits percentage of delete commands per second."),
 StatusColumn("IncHPct", "incr_hits_percentage", 0, column_flags_speed_then_ratio, field_handler_memcached_hits_percentage, ["incr_hits","incr_misses"], "Hits percentage of incr commands per second."),
-StatusColumn("DecHPct", "decr_hits_percentage", 0, column_flags_speed_then_ratio, field_handler_memcached_hits_percentage, ["decr_hits","decr_misses"], "Hits percentage of decr commands per second.")
+StatusColumn("DecHPct", "decr_hits_percentage", 0, column_flags_speed_then_ratio, field_handler_memcached_hits_percentage, ["decr_hits","decr_misses"], "Hits percentage of decr commands per second."),
+StatusColumn("CasHPct", "cas_hits_percentage", 0, column_flags_speed_then_ratio, field_handler_memcached_hits_percentage, ["cas_hits","cas_misses","cas_badval"], "Hits percentage of cas commands per second.")
 ], [get_memcached_status],["GetPct","GetHPct"],
 "memcached command detail status, collect from \'stats\'")
 
