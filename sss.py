@@ -2378,8 +2378,11 @@ StatusColumn("del_m", "delete_misses", 0, column_flags_speed, field_handler_comm
 StatusColumn("inc_h", "incr_hits", 0, column_flags_speed, field_handler_common, ["incr_hits"], "Number of incr commands hits per second."),
 StatusColumn("inc_m", "incr_misses", 0, column_flags_speed, field_handler_common, ["incr_misses"], "Number of incr commands misses per second."),
 StatusColumn("dec_h", "decr_hits", 0, column_flags_speed, field_handler_common, ["decr_hits"], "Number of decr commands hits per second."),
-StatusColumn("dec_m", "decr_misses", 0, column_flags_speed, field_handler_common, ["decr_misses"], "Number of decr commands misses per second.")
-], [get_memcached_status],[ALL_COLUMNS],
+StatusColumn("dec_m", "decr_misses", 0, column_flags_speed, field_handler_common, ["decr_misses"], "Number of decr commands misses per second."),
+StatusColumn("cas_h", "cas_hits", 0, column_flags_speed, field_handler_common, ["cas_hits"], "Number of cas commands hits per second."),
+StatusColumn("cas_m", "cas_misses", 0, column_flags_speed, field_handler_common, ["cas_misses"], "Number of cas commands misses per second."),
+StatusColumn("cas_b", "cas_badval", 0, column_flags_speed, field_handler_common, ["cas_badval"], "Number of cas commands bad values per second.")
+], [get_memcached_status],["get_h","get_m"],
 "memcached command detail status, collect from \'stats\'")
 
 memcached_sections = [
