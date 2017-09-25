@@ -106,6 +106,9 @@ def microsecond_differ_by_datetime(datetime_new, datetime_old):
     datetime_differ = datetime_new - datetime_old
     return datetime_differ.days*24*3600*1000000 + datetime_differ.seconds*1000000 + datetime_differ.microseconds
 
+def get_exception_message(function_name, line_no, message):
+    return function_name + ":" + str(line_no) + " Exception: " + message
+
 def get_falcon_metric_name_header(section_name):
     return service_type + "." + section_name
 
@@ -144,7 +147,7 @@ def errlog(server, errstr, need_check_server_alive):
                 append_server_alive_condition_to_falcon_json(server, status_json, server_alive)
                 output(server, json.dumps(status_json))
         except Exception, e:
-            errlog(server, e.message, False)
+            errlog(server, get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message), False)
 
 
     if len(errlog_file_name) == 0:
@@ -532,7 +535,7 @@ def get_status_line(server):
                 line += column_format % (column.getWidth(),value)
             except Exception, e:
                 server.err = 1
-                server.errmsg = e.message
+                server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
 
         line += '|'
 
@@ -581,7 +584,7 @@ def get_status_falcon_json(server):
                 },)
             except Exception, e:
                 server.err = 1
-                server.errmsg = e.message
+                server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
 
     if (server.err > 0):
         return None
@@ -1167,7 +1170,7 @@ class Server:
             pid_num = self.getPidNumHandler(server)
         except Exception, e:
             server.err = 1
-            server.errmsg = e.message
+            server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
             pid_num = -1
 
         return pid_num
@@ -1401,7 +1404,7 @@ class Server:
                 func[0](self,self.status)
             except Exception, e:
                 self.err = 1
-                self.errmsg = "Function " + getattr(func[0],'__name__') + ". " + e.message
+                self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
 
         return
 
@@ -1413,7 +1416,7 @@ class Server:
         self.getStatus()
         get_status_line(self)
         if (self.err > 0):
-            errlog(self, "Exception: " + self.errmsg, True)
+            errlog(self, self.errmsg, True)
 
         counter = -1
         while (1):
@@ -1442,8 +1445,8 @@ class Server:
                     self.need_reinit = 1
                 except Exception, e:
                     self.err = 1
-                    self.errmsg = e.message
-                    errlog(self, "Exception: " + self.errmsg, True)
+                    self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+                    errlog(self, self.errmsg, True)
                     continue
 
                 # Reinit the first status
@@ -1452,13 +1455,13 @@ class Server:
                 time.sleep(0.1)
                 self.need_reinit = 0
                 if self.err > 0:
-                    errlog(self, "Exception: " + self.errmsg, True)
+                    errlog(self, self.errmsg, True)
                     continue
 
             self.getStatus()
             status_line = get_status_line(self)
             if self.err > 0:
-                errlog(self, "Exception: " + self.errmsg, True)
+                errlog(self, self.errmsg, True)
                 continue
 
             output(self, status_line)
@@ -1469,14 +1472,14 @@ class Server:
         # Init the first status
         self.getStatus()
         if (self.err > 0):
-            errlog(self, "Exception: " + self.errmsg, True)
+            errlog(self, self.errmsg, True)
 
         # If speed calculate by the  remote monitor system, and status only collect one time,
         # we just return the status without sleep.
         if speed_calculate_by_remote_monitor_system == 1 and status_collect_times == 1:
             status_line = get_status_falcon_json(self)
             if self.err > 0:
-                errlog(self, "Exception: " + self.errmsg, True)
+                errlog(self, self.errmsg, True)
                 return
 
             output(self, status_line)
@@ -1505,8 +1508,8 @@ class Server:
                     self.need_reinit = 1
                 except Exception, e:
                     self.err = 1
-                    self.errmsg = e.message
-                    errlog(self, "Exception: " + self.errmsg, True)
+                    self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+                    errlog(self, self.errmsg, True)
                     continue
 
                 # Reinit the first status
@@ -1514,13 +1517,13 @@ class Server:
                 time.sleep(0.1)
                 self.need_reinit = 0
                 if self.err > 0:
-                    errlog(self, "Exception: " + self.errmsg, True)
+                    errlog(self, self.errmsg, True)
                     continue
 
             self.getStatus()
             status_line = get_status_falcon_json(self)
             if self.err > 0:
-                errlog(self, "Exception: " + self.errmsg, True)
+                errlog(self, self.errmsg, True)
                 continue
 
             output(self, status_line)
@@ -2187,7 +2190,7 @@ def pika_connection_create():
             password=password)
     except Exception,e:
         server.err = 1
-        server.errmsg = e.message
+        server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
 
     return pika_conn
 
@@ -2673,7 +2676,7 @@ if __name__ == "__main__":
             server.initialize(server)
         except Exception, e:
             server.err = 1
-            server.errmsg = e.message
+            server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
 
     if output_type == output_type_open_falcon:
         server.uploadToOpenFalcon()
@@ -2689,7 +2692,7 @@ if __name__ == "__main__":
             server.clean(server)
         except Exception, e:
             server.err = 1
-            server.errmsg = e.message
+            server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
 
     if (output_type == output_type_file and output_file.closed == False):
         output_file.close()
