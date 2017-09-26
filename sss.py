@@ -1407,7 +1407,7 @@ class Server:
                 func[0](self,self.status)
             except Exception, e:
                 self.err = 1
-                self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+                self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message + " IN Function " + getattr(func[0],'__name__'))
 
         return
 
