@@ -24,7 +24,8 @@ type_mysql = "mysql"
 type_redis = "redis"
 type_pika = "pika"
 type_memcached = "memcached"
-support_types=[type_linux,type_mysql,type_redis,type_pika,type_memcached]
+type_twemproxies = "twemproxies"
+support_types=[type_linux,type_mysql,type_redis,type_pika,type_memcached,type_twemproxies]
 
 service_type=type_linux
 
@@ -2440,6 +2441,127 @@ memcached_connection_section,
 memcached_net_section
 ]
 
+# Twemproxies monitor implemented by deep
+####### Twemproxies Implement #######
+def twemproxies_connection_create():
+    sd = socket.socket()
+    sd.settimeout(1)
+    sd.connect((host, port))
+    return sd
+
+def twemproxies_connection_destroy(conn):
+    conn.close()
+    return
+
+## The caller need to catch the exception
+def twemproxies_initialize_for_server(server):
+    server.tws_conn = twemproxies_connection_create()
+    return
+
+## The caller need to catch the exception
+def twemproxies_clean_for_server(server):
+    twemproxies_connection_destroy(server.tws_conn)
+    return
+
+## The caller need to catch the exception
+def twemproxies_get_pidnum_for_server(server):
+    return -1
+
+def parse_twemproxies_server_status(server_status,status):
+    status["requests"] += long(server_status["requests"])
+    status["request_bytes"] += long(server_status["request_bytes"])
+    status["responses"] += long(server_status["responses"])
+    status["response_bytes"] += long(server_status["response_bytes"])
+
+    status["in_queue"] += long(server_status["in_queue"])
+    status["in_queue_bytes"] += long(server_status["in_queue_bytes"])
+    status["out_queue"] += long(server_status["out_queue"])
+    status["out_queue_bytes"] += long(server_status["out_queue_bytes"])
+
+    status["server_connections"] += long(server_status["server_connections"])
+    status["server_eof"] += long(server_status["server_eof"])
+    status["server_timedout"] += long(server_status["server_timedout"])
+    status["server_err"] += long(server_status["server_err"])
+    if long(server_status["server_ejected_at"]) > status["server_ejected_at"]:
+        status["server_ejected_at"] = long(server_status["server_ejected_at"]) 
+    
+    return
+
+def parse_twemproxies_pool_status(pool_status,status):
+    status["client_eof"] += long(pool_status["client_eof"])
+    status["client_err"] += long(pool_status["client_err"])
+    status["client_connections"] += long(pool_status["client_connections"])
+    status["server_ejects"] += long(pool_status["server_ejects"])
+    status["forward_error"] += long(pool_status["forward_error"])
+    status["fragments"] += long(pool_status["fragments"])
+
+
+    status["requests"] = 0
+    status["request_bytes"] = 0
+    status["responses"] = 0
+    status["response_bytes"] = 0
+
+    status["in_queue"] = 0
+    status["in_queue_bytes"] = 0
+    status["out_queue"] = 0
+    status["out_queue_bytes"] = 0
+
+    status["server_connections"] = 0
+    status["server_eof"] = 0
+    status["server_timedout"] = 0
+    status["server_err"] = 0
+    status["server_ejected_at"] = 0
+
+    for key,value in pool_status.items():
+        if  type(value) is dict:
+            parse_twemproxies_server_status(value,status)
+    return
+
+def parse_twemproxies_status(tws_status,status):
+    status["curr_connections"] = tws_status["curr_connections"]
+    status["total_connections"] = tws_status["total_connections"]
+
+    status["client_eof"] = 0
+    status["client_err"] = 0
+    status["client_connections"] = 0
+    status["server_ejects"] = 0
+    status["forward_error"] = 0
+    status["fragments"] = 0
+    for key, value in tws_status.items():
+        if  type(value) is dict:
+            parse_twemproxies_pool_status(value,status)
+
+    return
+
+## The caller need to catch the exception
+def get_twemproxies_status(server, status):
+    cmd = "status\r\n"
+    n_send = server.tws_conn.send(cmd)
+    if n_send != len(cmd):
+        return
+
+    buf = ""
+    while 1:
+        buf += server.tws_conn.recv(1024)
+        if buf.endswith("\n"):
+            break
+
+    tws_status = json.loads(buf)
+
+    parse_twemproxies_status(tws_status, status)
+    return
+twemproxies_connection_section = StatusSection("connection", "",[
+StatusColumn("conns", "connected_clients", 0, column_flags_none, field_handler_common, ["curr_connections"], "Counts for current connections."),
+StatusColumn("receive", "received_per_second", 0, column_flags_speed, field_handler_common, ["total_connections"], "Number of connections accepted by the proxy per second.")
+], [get_twemproxies_status],[ALL_COLUMNS],
+"twemproxies connection status, collect from \'status\'")
+twemproxies_sections = [
+twemproxies_connection_section
+]
+twemproxies_sections_to_show_default = [
+time_section,
+twemproxies_connection_section
+]
 ####### sss #######
 def usage():
     print 'python sss.py [options]'
@@ -2667,6 +2789,24 @@ if __name__ == "__main__":
                 sections_to_show_default = memcached_sections_to_show_default
             else:
                 sections_to_show_default = memcached_sections
+                sections_to_show_default.append(proc_cpu_section)
+                sections_to_show_default.append(proc_mem_section)
+    elif (service_type == type_twemproxies):
+        import json
+        server = Server("Twemproxies", service_type,
+                        twemproxies_initialize_for_server,
+                        twemproxies_clean_for_server,
+                        None,
+                        twemproxies_sections)
+        if all_section == 1:
+            server.setDefaultSectionsToShow(common_sections)
+            for section in twemproxies_sections:
+                server.addSectionToShowByName(section.getName())
+        elif (len(sections_name) == 0):
+            if output_type == output_type_screen or output_type == output_type_file:
+                sections_to_show_default = twemproxies_sections_to_show_default
+            else:
+                sections_to_show_default = twemproxies_sections
                 sections_to_show_default.append(proc_cpu_section)
                 sections_to_show_default.append(proc_mem_section)
 
