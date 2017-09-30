@@ -2562,14 +2562,25 @@ StatusColumn("eof", "client_eof_per_second", 0, column_flags_speed, field_handle
 StatusColumn("err", "client_err_per_second", 0, column_flags_speed, field_handler_common, ["client_err"], "Number of client error per second.")
 ], [get_twemproxies_status],[ALL_COLUMNS],
 "twemproxies client status, collect from \'status\'")
+
+twemproxies_server_section = StatusSection("server", "",[
+StatusColumn("conns", "server_connections", 0, column_flags_none, field_handler_common, ["server_connections"], "Counts of connections for backend servers."),
+StatusColumn("eof", "server_eof_per_second", 0, column_flags_speed, field_handler_common, ["server_eof"], "Number of backend server eof per second."),
+StatusColumn("err", "server_err_per_second", 0, column_flags_speed, field_handler_common, ["server_err"], "Number of backend server error per second."),
+StatusColumn("tio", "server_timedout_per_second", 0, column_flags_speed, field_handler_common, ["server_timedout"], "Number of backend server timeout per second."),
+StatusColumn("eje", "server_ejects_per_second", 0, column_flags_speed, field_handler_common, ["server_ejects"], "Number of backend server ejected per second.")
+], [get_twemproxies_status],[ALL_COLUMNS],
+"twemproxies backend server status, collect from \'status\'")
 twemproxies_sections = [
 twemproxies_connection_section,
-twemproxies_client_section
+twemproxies_client_section,
+twemproxies_server_section
 ]
 twemproxies_sections_to_show_default = [
 time_section,
 twemproxies_connection_section,
-twemproxies_client_section
+twemproxies_client_section,
+twemproxies_command_section
 ]
 ####### sss #######
 def usage():
