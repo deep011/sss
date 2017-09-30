@@ -2571,10 +2571,18 @@ StatusColumn("tio", "server_timedout_per_second", 0, column_flags_speed, field_h
 StatusColumn("eje", "server_ejects_per_second", 0, column_flags_speed, field_handler_common, ["server_ejects"], "Number of backend server ejected per second.")
 ], [get_twemproxies_status],[ALL_COLUMNS],
 "twemproxies backend server status, collect from \'status\'")
+
+twemproxies_command_section = StatusSection("command", "",[
+StatusColumn("req", "requests_per_second", 0, column_flags_speed, field_handler_common, ["requests"], "Number of requests received from clients per second."),
+StatusColumn("resp", "responses_per_second", 0, column_flags_speed, field_handler_common, ["responses"], "Number of responses sent to clients per second."),
+StatusColumn("resp", "responses_per_second", 0, column_flags_speed, field_handler_common, ["fragments"], "Number of fragments processed per second. Fragments created from a multi-vector request, like mget, mset and delete multi keys.")
+], [get_twemproxies_status],[ALL_COLUMNS],
+"twemproxies command status, collect from \'status\'")
 twemproxies_sections = [
 twemproxies_connection_section,
 twemproxies_client_section,
-twemproxies_server_section
+twemproxies_server_section,
+twemproxies_command_section
 ]
 twemproxies_sections_to_show_default = [
 time_section,
@@ -2582,6 +2590,7 @@ twemproxies_connection_section,
 twemproxies_client_section,
 twemproxies_command_section
 ]
+
 ####### sss #######
 def usage():
     print 'python sss.py [options]'
