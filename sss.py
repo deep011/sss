@@ -2578,17 +2578,25 @@ StatusColumn("resp", "responses_per_second", 0, column_flags_speed, field_handle
 StatusColumn("resp", "responses_per_second", 0, column_flags_speed, field_handler_common, ["fragments"], "Number of fragments processed per second. Fragments created from a multi-vector request, like mget, mset and delete multi keys.")
 ], [get_twemproxies_status],[ALL_COLUMNS],
 "twemproxies command status, collect from \'status\'")
+
+twemproxies_net_section = StatusSection("net", "",[
+StatusColumn("in", "incoming_bytes_per_second", 0, column_flags_bytes|column_flags_speed, field_handler_common, ["request_bytes"], "Bytes per second received into the proxy."),
+StatusColumn("out", "outgoing_bytes_per_second", 0, column_flags_bytes|column_flags_speed, field_handler_common, ["response_bytes"], "Bytes per second sent by the proxy.")
+], [get_twemproxies_status],[ALL_COLUMNS],
+"twemproxies network status, collect from \'status\'")
 twemproxies_sections = [
 twemproxies_connection_section,
 twemproxies_client_section,
 twemproxies_server_section,
-twemproxies_command_section
+twemproxies_command_section,
+twemproxies_net_section
 ]
 twemproxies_sections_to_show_default = [
 time_section,
 twemproxies_connection_section,
 twemproxies_client_section,
-twemproxies_command_section
+twemproxies_command_section,
+twemproxies_net_section
 ]
 
 ####### sss #######
