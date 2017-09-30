@@ -2,7 +2,7 @@
 
 **sss** (abbreviation "Show-Service-Status") is a convenient tool to Show the Service Status.
 
-By now, sss support for os(linux), mysql, redis, pika and memcached.
+By now, sss support for os(linux), mysql, redis, pika, memcached and twemproxies.
 
 ## Usage
 
@@ -34,7 +34,7 @@ By now, sss support for os(linux), mysql, redis, pika and memcached.
     --proc-pid: set the process pid number for proc_* sections, default is 0
     
     
-    Support services: linux mysql redis pika memcached
+    Support services: linux mysql redis pika memcached twemproxies
     
 ## Dependence
 
