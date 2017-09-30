@@ -2555,12 +2555,21 @@ StatusColumn("conns", "connected_clients", 0, column_flags_none, field_handler_c
 StatusColumn("receive", "received_per_second", 0, column_flags_speed, field_handler_common, ["total_connections"], "Number of connections accepted by the proxy per second.")
 ], [get_twemproxies_status],[ALL_COLUMNS],
 "twemproxies connection status, collect from \'status\'")
+
+twemproxies_client_section = StatusSection("client", "",[
+StatusColumn("conns", "connected_clients", 0, column_flags_none, field_handler_common, ["client_connections"], "Counts for connected clients."),
+StatusColumn("eof", "client_eof_per_second", 0, column_flags_speed, field_handler_common, ["client_eof"], "Number of client eof per second."),
+StatusColumn("err", "client_err_per_second", 0, column_flags_speed, field_handler_common, ["client_err"], "Number of client error per second.")
+], [get_twemproxies_status],[ALL_COLUMNS],
+"twemproxies client status, collect from \'status\'")
 twemproxies_sections = [
-twemproxies_connection_section
+twemproxies_connection_section,
+twemproxies_client_section
 ]
 twemproxies_sections_to_show_default = [
 time_section,
-twemproxies_connection_section
+twemproxies_connection_section,
+twemproxies_client_section
 ]
 ####### sss #######
 def usage():
