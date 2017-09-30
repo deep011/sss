@@ -2,7 +2,7 @@
 
 **sss** (abbreviation "Show-Service-Status") is a convenient tool to Show the Service Status.
 
-By now, sss support for [linux](https://github.com/torvalds/linux), [mysql](https://www.mysql.com/), [redis](https://redis.io/), [pika](https://github.com/pika/pika), [memcached](http://memcached.org/) and [twemproxies](https://github.com/vipshop/twemproxies).
+By now, sss support for [linux](https://github.com/torvalds/linux), [mysql](https://www.mysql.com/), [redis](https://redis.io/), [pika](https://github.com/Qihoo360/pika), [memcached](http://memcached.org/) and [twemproxies](https://github.com/vipshop/twemproxies).
 
 ## Usage
 
