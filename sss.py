@@ -2550,6 +2550,7 @@ def get_twemproxies_status(server, status):
 
     parse_twemproxies_status(tws_status, status)
     return
+
 twemproxies_connection_section = StatusSection("connection", "",[
 StatusColumn("conns", "connected_clients", 0, column_flags_none, field_handler_common, ["curr_connections"], "Counts for current connections."),
 StatusColumn("receive", "received_per_second", 0, column_flags_speed, field_handler_common, ["total_connections"], "Number of connections accepted by the proxy per second.")
@@ -2584,19 +2585,31 @@ StatusColumn("in", "incoming_bytes_per_second", 0, column_flags_bytes|column_fla
 StatusColumn("out", "outgoing_bytes_per_second", 0, column_flags_bytes|column_flags_speed, field_handler_common, ["response_bytes"], "Bytes per second sent by the proxy.")
 ], [get_twemproxies_status],[ALL_COLUMNS],
 "twemproxies network status, collect from \'status\'")
+
+twemproxies_queue_section = StatusSection("queue", "",[
+StatusColumn("req", "requests_cached", 0, column_flags_none, field_handler_common, ["in_queue"], "Counts of requests cached in the proxy."),
+StatusColumn("resp", "responses_cached", 0, column_flags_none, field_handler_common, ["out_queue"], "Counts of responses cached in the proxy."),
+StatusColumn("ReqB", "request_bytes_cached", 0, column_flags_bytes, field_handler_common, ["in_queue_bytes"], "Bytes of requests cached in the proxy."),
+StatusColumn("RespB", "response_bytes_cached", 0, column_flags_bytes, field_handler_common, ["out_queue_bytes"], "Bytes of responses cached in the proxy.")
+], [get_twemproxies_status],["req","resp"],
+"twemproxies queue status, collect from \'status\'")
+
 twemproxies_sections = [
 twemproxies_connection_section,
 twemproxies_client_section,
 twemproxies_server_section,
 twemproxies_command_section,
-twemproxies_net_section
+twemproxies_net_section,
+twemproxies_queue_section
 ]
+
 twemproxies_sections_to_show_default = [
 time_section,
 twemproxies_connection_section,
 twemproxies_client_section,
 twemproxies_command_section,
-twemproxies_net_section
+twemproxies_net_section,
+twemproxies_queue_section
 ]
 
 ####### sss #######
