@@ -61,7 +61,8 @@ status_collect_times=-1 #default is forever
 column_format = '%*s'
 
 
-all_section = 0
+all_section=0
+sections_customized=0
 
 segmentation_line_len = 40
 
@@ -683,6 +684,7 @@ def get_one_instructions(header, name, detail_name, instructions, max_line_len):
     return one_instructions
 
 def get_section_instructions(section):
+    global sections_customized
     max_line_len = 60
     header_section = "Section"
     header_column = "Column "
@@ -690,7 +692,11 @@ def get_section_instructions(section):
     section_instructions = get_one_instructions(header_section, section.getName(), "", section.getInstructions(), max_line_len)
 
     section_instructions += "\n" + "-"*segmentation_line_len + "\n"
-    columns = section.getColumns()
+    if sections_customized == 0:
+        columns = section.getColumns()
+    else:
+        columns = section.getColumnsToShow()
+
     count = len(columns)
     for column in columns:
         section_instructions += get_one_instructions(header_column, column.getName(), column.getDetailName(), column.getInstructions(), max_line_len)
@@ -2654,8 +2660,13 @@ def print_version():
     return
 
 def print_sections_instructions(server):
+    global sections_customized
     segmentation_line = "_"*segmentation_line_len
-    sections = server.getSupportedSections()
+    if sections_customized == 0:
+        sections = server.getSupportedSections()
+    else:
+        sections = server.sections_to_show
+
     print_version()
     print "* Use -T option to set the service type and show the type support sections\' instructions"
     print ""
@@ -2709,6 +2720,7 @@ if __name__ == "__main__":
                 print "Support types: " + getSupportedServiceTypesName()
                 sys.exit(3)
         elif opt in ('-s'):
+            sections_customized = 1
             if arg == 'all':
                 all_section = 1
             else:
@@ -2717,11 +2729,13 @@ if __name__ == "__main__":
                     print "Section '%s' is not supported" % (arg)
                     sys.exit(3)
         elif opt in ('-a'):
+            sections_customized = 1
             sections_name_addition = split_section_name_from_sections_part(arg)
             if sections_name_addition == None:
                 print "Section '%s' is not supported" % (arg)
                 sys.exit(3)
         elif opt in ('-d'):
+            sections_customized = 1
             sections_name_removed = split_section_name_from_sections_part(arg)
             if sections_name_removed == None:
                 print "Section '%s' is not supported" % (arg)
@@ -2860,10 +2874,6 @@ if __name__ == "__main__":
                 sections_to_show_default.append(proc_cpu_section)
                 sections_to_show_default.append(proc_mem_section)
 
-    if (instructions_show == 1):
-        print_sections_instructions(server)
-        sys.exit(1)
-
     if (len(server.sections_to_show) == 0):
         server.setDefaultSectionsToShow(sections_to_show_default)
 
@@ -2892,6 +2902,10 @@ if __name__ == "__main__":
             sys.exit(3)
 
     server.setTypeSectionsToShowIfNeeded()
+
+    if (instructions_show == 1):
+        print_sections_instructions(server)
+        sys.exit(1)
 
     if output_type == output_type_file:
         output_file = open(output_file_name+'_'+current_day, 'a', 0)
