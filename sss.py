@@ -154,6 +154,7 @@ def errlog(server, errstr, need_check_server_alive):
         except Exception, e:
             errlog(server, get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message), False)
 
+        errstr += " " + "(" + service_type + " alive: " + str(server_alive) + ")"
 
     if len(errlog_file_name) == 0:
         print server.getCurrentTimeFormattedString() + " " + errstr
@@ -2353,6 +2354,27 @@ def memcached_clean_for_server(server):
     memcached_connection_destroy(server.mc_conn)
     return
 
+def check_memcached_alive(server):
+    alive = 0
+
+    try:
+        cmd = "version\r\n"
+        memcached_check_alive_mark_header = "VERSION"
+
+        sd = socket.socket()
+        sd.settimeout(1)
+        sd.connect((host, check_alive_port))
+
+        sd.send(cmd)
+        buf = sd.recv(128)
+        if len(buf) > len(memcached_check_alive_mark_header) and buf.startswith(memcached_check_alive_mark_header) == True:
+            alive = 1
+    except Exception, e:
+        return alive
+
+    sd.close()
+    return alive
+
 ## The caller need to catch the exception
 def memcached_get_pidnum_for_server(server):
     pid = server.mc_conn.get_stats()[0][1]["pid"]
@@ -2853,6 +2875,7 @@ if __name__ == "__main__":
                         memcached_clean_for_server,
                         memcached_get_pidnum_for_server,
                         memcached_sections)
+        server.check_alive = check_memcached_alive
         if all_section == 1:
             server.setDefaultSectionsToShow(common_sections)
             for section in memcached_sections:
