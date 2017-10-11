@@ -52,6 +52,9 @@ user="root"
 password=""
 socket_file=""
 
+check_alive_port=port
+check_alive_port_setting_by_human=0
+
 hostname=socket.gethostname()
 
 status_collect_interval=1 #second, default is one second
@@ -2645,6 +2648,7 @@ def usage():
     print '--net-face: set the net device face name for os_net_* sections, default is \'lo\''
     print '--disk-name: set the disk device name for os_disk sections, default is \'vda\''
     print '--proc-pid: set the process pid number for proc_* sections, default is 0'
+    print '--check-alive-port: the port used to check the service is alive or not, default is same as the port setted by the \'-P\' option'
     print '\r\n'
     support_services=""
     for service in support_types:
@@ -2680,7 +2684,7 @@ def print_sections_instructions(server):
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvIH:P:u:p:T:s:a:d:o:De:i:n:S', ['help', 'version', 'instructions','socket=','falcon=','net-face=','disk-name=','proc-pid='])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvIH:P:u:p:T:s:a:d:o:De:i:n:S', ['help', 'version', 'instructions','socket=','falcon=','net-face=','disk-name=','proc-pid=','check-alive-port='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -2703,6 +2707,8 @@ if __name__ == "__main__":
             host = arg
         elif opt in ('-P'):
             port = int(arg)
+            if check_alive_port_setting_by_human == 0:
+                check_alive_port = port
         elif opt in ('-u'):
             user = arg
         elif opt in ('-p'):
@@ -2767,6 +2773,9 @@ if __name__ == "__main__":
         elif opt in ('--proc-pid'):
             proc_pid = int(arg)
             proc_pid_is_set = 1
+        elif opt in ('--check-alive-port'):
+            check_alive_port = int(arg)
+            check_alive_port_setting_by_human = 1
         else:
             print 'Unhandled option'
             sys.exit(3)
