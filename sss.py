@@ -18,6 +18,7 @@ import datetime
 import getopt
 import sys
 import socket
+import os
 
 type_linux = "linux"
 type_mysql = "mysql"
@@ -107,6 +108,12 @@ def num2readable(number):
 def microsecond_differ_by_datetime(datetime_new, datetime_old):
     datetime_differ = datetime_new - datetime_old
     return datetime_differ.days*24*3600*1000000 + datetime_differ.seconds*1000000 + datetime_differ.microseconds
+
+def get_proc_pid_from_pid_file(pid_file):
+    pidfile_fd = open(pid_file, 'r')
+    process_pid = int(pidfile_fd.read(10))
+    pidfile_fd.close()
+    return process_pid
 
 def get_exception_message(function_name, line_no, message):
     return function_name + ":" + str(line_no) + " Exception: " + message
@@ -1030,6 +1037,7 @@ StatusColumn("cached", "", 0, column_flags_bytes, field_handler_common, ["os_mem
 "os memory status, collect from /proc/meminfo file")
 
 proc_pid = 0
+proc_pidfile = ""
 proc_pid_is_set = 0
 def get_proc_cpu_status(server, status):
     global proc_pid_is_set
@@ -1173,7 +1181,10 @@ class Server:
         return column_format % (9, self.current_time.strftime(date_format+" "+time_format))
 
     def getPidNum(self, server):
-        if (self.getPidNumHandler == None):
+        if len(proc_pidfile) > 0:
+            return get_proc_pid_from_pid_file(proc_pidfile)
+
+        if self.getPidNumHandler == None:
             print "Please set the process pid number"
             sys.exit(3)
 
@@ -2360,7 +2371,7 @@ def check_memcached_alive(server):
 
         sd = socket.socket()
         sd.settimeout(1)
-        sd.connect((host, check_alive_port))
+        sd.connect((host, port))
 
         sd.send(cmd)
         buf = sd.recv(128)
@@ -2754,7 +2765,7 @@ if __name__ == "__main__":
             sections_customized = 1
             sections_name_addition = split_section_name_from_sections_part(arg)
             if sections_name_addition == None:
-                print "Section '%s' is not supported" % (arg)
+                print "ERROR! Section '%s' is not supported" % (arg)
                 sys.exit(3)
         elif opt in ('-d'):
             sections_customized = 1
@@ -2787,10 +2798,24 @@ if __name__ == "__main__":
         elif opt in ('--disk-name'):
             disk_name = arg
         elif opt in ('--proc-pid'):
-            proc_pid = int(arg)
+            if arg.isdigit():
+                proc_pid = int(arg)
+            elif len(arg) > 0 and arg.startswith("file:"):
+                pidfile_array = arg.split(':',2)
+                if len(pidfile_array) != 2:
+                    print 'ERROR! Pid file Option \'--proc-pid\' must be the process pid number or the exists pid file.'
+                    sys.exit(3)
+
+                proc_pidfile = pidfile_array[1]
+                proc_pid = get_proc_pid_from_pid_file(proc_pidfile)
+            else:
+                print 'ERROR! Option \'--proc-pid\' must be the process pid number or the exists pid file.'
+                print 'If option \'--proc-pid\' is pid file, it must be start with \'file:\'.'
+                sys.exit(3)
+
             proc_pid_is_set = 1
         else:
-            print 'Unhandled option'
+            print 'ERROR! Unhandled option'
             sys.exit(3)
 
     server = None
