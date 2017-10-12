@@ -2597,7 +2597,12 @@ def get_twemproxies_status(server, status):
 
     buf = ""
     while 1:
-        buf += server.tws_conn.recv(1024)
+        data = server.tws_conn.recv(1024)
+        if not data:
+            # connection close, let's kill it and raise
+            raise Exception("connection closed by server")
+
+        buf += data
         if buf.endswith("\n"):
             break
 
