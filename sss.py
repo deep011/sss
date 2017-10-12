@@ -115,8 +115,22 @@ def get_proc_pid_from_pid_file(pid_file):
     pidfile_fd.close()
     return process_pid
 
-def get_exception_message(function_name, line_no, message):
-    return function_name + ":" + str(line_no) + " Exception: " + message
+log_level_debug=0
+log_level_info=1
+log_level_error=2
+log_level=log_level_info
+if log_level == log_level_debug:
+    import traceback
+def get_exception_message(function_name, line_no, exception):
+    exception_header = function_name + ":" + str(line_no) + " Exception: "
+    if log_level == log_level_debug:
+        exception_header += traceback.format_exc()
+    elif log_level == log_level_info:
+        exception_header += repr(exception)
+    else:
+        exception_header += str(exception)
+
+    return exception_header
 
 def get_falcon_metric_name_header(section_name):
     return service_type + "." + section_name
@@ -156,7 +170,7 @@ def errlog(server, errstr, need_check_server_alive):
                 append_server_alive_condition_to_falcon_json(server, status_json, server_alive)
                 output(server, json.dumps(status_json))
         except Exception, e:
-            errlog(server, get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message), False)
+            errlog(server, get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e), False)
 
         errstr += " " + "(" + service_type + " alive: " + str(server_alive) + ")"
 
@@ -546,7 +560,7 @@ def get_status_line(server):
                 line += column_format % (column.getWidth(),value)
             except Exception, e:
                 server.err = 1
-                server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+                server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e)
 
         line += '|'
 
@@ -597,7 +611,7 @@ def get_status_falcon_json(server):
                 },)
             except Exception, e:
                 server.err = 1
-                server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+                server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e)
 
     if (server.err > 0):
         return None
@@ -1192,7 +1206,7 @@ class Server:
             pid_num = self.getPidNumHandler(server)
         except Exception, e:
             server.err = 1
-            server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+            server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e)
             pid_num = -1
 
         return pid_num
@@ -1426,7 +1440,7 @@ class Server:
                 func[0](self,self.status)
             except Exception, e:
                 self.err = 1
-                self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message + " IN Function " + getattr(func[0],'__name__'))
+                self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e) + " IN Function " + getattr(func[0],'__name__')
 
         return
 
@@ -1467,7 +1481,7 @@ class Server:
                     self.need_reinit = 1
                 except Exception, e:
                     self.err = 1
-                    self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+                    self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e)
                     errlog(self, self.errmsg, True)
                     continue
 
@@ -1530,7 +1544,7 @@ class Server:
                     self.need_reinit = 1
                 except Exception, e:
                     self.err = 1
-                    self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+                    self.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e)
                     errlog(self, self.errmsg, True)
                     continue
 
@@ -2212,7 +2226,7 @@ def pika_connection_create():
             password=password)
     except Exception,e:
         server.err = 1
-        server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+        server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e)
 
     return pika_conn
 
@@ -2499,7 +2513,9 @@ def twemproxies_initialize_for_server(server):
 
 ## The caller need to catch the exception
 def twemproxies_clean_for_server(server):
-    twemproxies_connection_destroy(server.tws_conn)
+    if hasattr(server, 'tws_conn'):
+        twemproxies_connection_destroy(server.tws_conn)
+
     return
 
 ## The caller need to catch the exception
@@ -2964,7 +2980,7 @@ if __name__ == "__main__":
             server.initialize(server)
         except Exception, e:
             server.err = 1
-            server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+            server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e)
 
     if output_type == output_type_open_falcon:
         server.uploadToOpenFalcon()
@@ -2980,7 +2996,7 @@ if __name__ == "__main__":
             server.clean(server)
         except Exception, e:
             server.err = 1
-            server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e.message)
+            server.errmsg = get_exception_message(sys._getframe().f_code.co_name,sys._getframe().f_lineno, e)
 
     if (output_type == output_type_file and output_file.closed == False):
         output_file.close()
