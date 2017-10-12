@@ -1755,7 +1755,8 @@ StatusColumn("UPs", "update_per_second", 0, column_flags_speed, field_handler_co
 StatusColumn("DMPs", "delete_multi_per_second", 0, column_flags_speed, field_handler_common,["Com_delete_multi"], "Delete commands per second that use multiple-table syntax. Collected from 'Com_delete_multi'."),
 StatusColumn("UMPs", "update_multi_per_second", 0, column_flags_speed, field_handler_common,["Com_update_multi"], "Update commands per second that use multiple-table syntax. Collected from 'Com_update_multi'."),
 StatusColumn("TPs", "transactions_per_second", 0, column_flags_speed, field_handler_common, ["Com_commit", "Com_rollback"], "Transactions per second. Collected from the sum of 'Com_commit' and 'Com_rollback'."),
-StatusColumn("DIUPs", "dml_per_second", 0, column_flags_speed, field_handler_common,["Com_delete","Com_insert","Com_update"], "DDL(delete+insert+update) commands per second. Collected from the sum of 'Com_delete', 'Com_insert' and 'Com_update'.")
+StatusColumn("DIUPs", "dml_per_second", 0, column_flags_speed, field_handler_common,["Com_delete","Com_insert","Com_update"], "DDL(delete+insert+update) commands per second. Collected from the sum of 'Com_delete', 'Com_insert' and 'Com_update'."),
+StatusColumn("LPs", "load_per_second", 0, column_flags_speed, field_handler_common,["Com_load"], "Load commands per second. Collected from 'Com_load'.")
 ], [get_mysql_status],["TPs","QPs","DPs","IPs","UPs","DIUPs"],
 "mysql commands status, collect from \'show global status\'")
 
