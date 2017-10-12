@@ -2323,6 +2323,18 @@ def field_handler_pika_backend_job(column, status, server):
             return 1
         else:
             return -1
+    elif column.getName() == "cmpt":
+        compact = status["is_compact"]
+        if len(compact) <= 0:
+            return -1
+        elif compact == "No":
+            return 0
+        elif compact == "Key":
+            return 1
+        elif compact == "All":
+            return 2
+        else:
+            return -1
 
     return -1
 
@@ -2362,7 +2374,8 @@ StatusColumn("l", "link_status", 1, column_flags_none, field_handler_pika_replic
 "pika replication status, collect from \'info\'")
 
 pika_backend_job_section = StatusSection("backend", "",[
-StatusColumn("scan", "scaning_keyspace", 0, column_flags_none, field_handler_pika_backend_job, ["scaning_keyspace"], "Value is \'0\' if the pika is not scanning the keyspace, or \'1\' if the pika is scanning the keyspace.")
+StatusColumn("scan", "scaning_keyspace", 1, column_flags_none, field_handler_pika_backend_job, ["scaning_keyspace"], "Value is \'0\' if the pika is not scanning the keyspace, or \'1\' if the pika is scanning the keyspace."),
+StatusColumn("cmpt", "compact", 1, column_flags_none, field_handler_pika_backend_job, ["compact"], "Value is \'0\' if the pika is not compact, or \'1\' if the pika is compact key, or \'2\' if the pika is compact all.")
 ], [get_pika_status],[ALL_COLUMNS],
 "pika backend job status, collect from \'info\'")
 
