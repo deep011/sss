@@ -2308,7 +2308,23 @@ def field_handler_pika_replication(column, status, server):
     elif column.getName() == "l":
         return link_status
 
-    return ""
+    return -1
+
+## The caller need to catch the exception
+def field_handler_pika_backend_job(column, status, server):
+
+    if column.getName() == "scan":
+        is_scaning_keyspace = status["is_scaning_keyspace"]
+        if len(is_scaning_keyspace) <= 0:
+            return -1
+        if is_scaning_keyspace.startswith("No"):
+            return 0
+        elif is_scaning_keyspace.startswith("Yes"):
+            return 1
+        else:
+            return -1
+
+    return -1
 
 pika_connection_section = StatusSection("connection", "",[
 StatusColumn("conns", "connected_clients", 0, column_flags_none, field_handler_common, ["connected_clients"], "Counts for connected clients."),
@@ -2345,12 +2361,18 @@ StatusColumn("l", "link_status", 1, column_flags_none, field_handler_pika_replic
 ], [get_pika_status],[ALL_COLUMNS],
 "pika replication status, collect from \'info\'")
 
+pika_backend_job_section = StatusSection("backend", "",[
+StatusColumn("scan", "scaning_keyspace", 0, column_flags_none, field_handler_pika_backend_job, ["scaning_keyspace"], "Value is \'0\' if the pika is not scanning the keyspace, or \'1\' if the pika is scanning the keyspace.")
+], [get_pika_status],[ALL_COLUMNS],
+"pika backend job status, collect from \'info\'")
+
 pika_sections = [
 pika_connection_section,
 pika_data_section,
 pika_keyspace_section,
 pika_command_section,
-pika_replication_section
+pika_replication_section,
+pika_backend_job_section
 ]
 
 pika_sections_to_show_default = [
