@@ -2335,6 +2335,16 @@ def field_handler_pika_backend_job(column, status, server):
             return 2
         else:
             return -1
+    if column.getName() == "bgsv":
+        bgsaving = status["is_bgsaving"]
+        if len(bgsaving) <= 0:
+            return -1
+        if bgsaving.startswith("No"):
+            return 0
+        elif bgsaving.startswith("Yes"):
+            return 1
+        else:
+            return -1
 
     return -1
 
@@ -2375,7 +2385,8 @@ StatusColumn("l", "link_status", 1, column_flags_none, field_handler_pika_replic
 
 pika_backend_job_section = StatusSection("backend", "",[
 StatusColumn("scan", "scaning_keyspace", 1, column_flags_none, field_handler_pika_backend_job, ["scaning_keyspace"], "Value is \'0\' if the pika is not scanning the keyspace, or \'1\' if the pika is scanning the keyspace."),
-StatusColumn("cmpt", "compact", 1, column_flags_none, field_handler_pika_backend_job, ["compact"], "Value is \'0\' if the pika is not compact, or \'1\' if the pika is compact key, or \'2\' if the pika is compact all.")
+StatusColumn("cmpt", "compact", 1, column_flags_none, field_handler_pika_backend_job, ["compact"], "Value is \'0\' if the pika is not compact, or \'1\' if the pika is compact key, or \'2\' if the pika is compact all."),
+StatusColumn("bgsv", "bgsaving", 1, column_flags_none, field_handler_pika_backend_job, ["bgsaving"], "Value is \'0\' if the pika is not bgsaving, or \'1\' if the pika is bgsaving.")
 ], [get_pika_status],[ALL_COLUMNS],
 "pika backend job status, collect from \'info\'")
 
