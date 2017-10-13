@@ -53,6 +53,9 @@ user="root"
 password=""
 socket_file=""
 
+service_port_setted_by_human=0
+service_port=port
+
 hostname=socket.gethostname()
 
 status_collect_interval=1 #second, default is one second
@@ -140,7 +143,7 @@ def get_falcon_tags_string(section_type):
     if section_type == type_linux:
         tags += "linux"
     else:
-        tags += "port=" + str(port)
+        tags += "port=" + str(service_port)
 
     return tags
 
@@ -2733,7 +2736,7 @@ def usage():
     print '-h,--help: show this help message'
     print '-v,--version: show the version'
     print '-H: target host'
-    print '-P: target port'
+    print '-P: target port to get the service status'
     print '-u: target service user'
     print '-p: target user password'
     print '-T: target service type, default is '+support_types[0]
@@ -2752,6 +2755,7 @@ def usage():
     print '--net-face: set the net device face name for os_net_* sections, default is \'lo\''
     print '--disk-name: set the disk device name for os_disk sections, default is \'vda\''
     print '--proc-pid: set the process pid number for proc_* sections, default is 0'
+    print '--service-port: set the server service port, default is same as the port setted by \'-P\' option'
     print '\r\n'
     support_services=""
     for service in support_types:
@@ -2787,7 +2791,7 @@ def print_sections_instructions(server):
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvIH:P:u:p:T:s:a:d:o:De:i:n:S', ['help', 'version', 'instructions','socket=','falcon=','net-face=','disk-name=','proc-pid='])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvIH:P:u:p:T:s:a:d:o:De:i:n:S', ['help', 'version', 'instructions','socket=','falcon=','net-face=','disk-name=','proc-pid=','service-port='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -2810,6 +2814,9 @@ if __name__ == "__main__":
             host = arg
         elif opt in ('-P'):
             port = int(arg)
+            if service_port_setted_by_human == 0:
+                service_port = port
+
         elif opt in ('-u'):
             user = arg
         elif opt in ('-p'):
@@ -2888,6 +2895,9 @@ if __name__ == "__main__":
                 sys.exit(3)
 
             proc_pid_is_set = 1
+        elif opt in ('--service-port'):
+            service_port = int(arg)
+            service_port_setted_by_human = 1
         else:
             print 'ERROR! Unhandled option'
             sys.exit(3)
