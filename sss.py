@@ -1765,7 +1765,8 @@ StatusColumn("TrPs", "truncate_per_second", 0, column_flags_speed, field_handler
 StatusColumn("StartSPs", "start_slave_per_second", 0, column_flags_speed, field_handler_common,["Com_start_slave"], "Start slave commands per second. Collected from 'Com_start_slave'."),
 StatusColumn("StopSPs", "stop_slave_per_second", 0, column_flags_speed, field_handler_common,["Com_stop_slave"], "Stop slave commands per second. Collected from 'Com_stop_slave'."),
 StatusColumn("KPs", "kill_per_second", 0, column_flags_speed, field_handler_common,["Com_kill"], "Kill commands per second. Collected from 'Com_kill'."),
-StatusColumn("CMPs", "change_master_per_second", 0, column_flags_speed, field_handler_common,["Com_change_master"], "Change master commands per second. Collected from 'Com_change_master'.")
+StatusColumn("CMPs", "change_master_per_second", 0, column_flags_speed, field_handler_common,["Com_change_master"], "Change master commands per second. Collected from 'Com_change_master'."),
+StatusColumn("SOPs", "set_option_per_second", 0, column_flags_speed, field_handler_common,["Com_set_option"], "Set option commands per second. Collected from 'Com_set_option'.")
 ], [get_mysql_status],["TPs","QPs","DPs","IPs","UPs","DIUPs"],
 "mysql commands status, collect from \'show global status\'")
 
