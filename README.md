@@ -13,7 +13,7 @@ By now, sss support for [linux](https://github.com/torvalds/linux), [mysql](http
     -h,--help: show this help message
     -v,--version: show the version
     -H: target host
-    -P: target port
+    -P: target port to get the service status
     -u: target service user
     -p: target user password
     -T: target service type, default is linux
@@ -32,9 +32,11 @@ By now, sss support for [linux](https://github.com/torvalds/linux), [mysql](http
     --net-face: set the net device face name for os_net_* sections, default is 'lo'
     --disk-name: set the disk device name for os_disk sections, default is 'vda'
     --proc-pid: set the process pid number for proc_* sections, default is 0
+    --service-port: set the server service port, default is same as the port setted by '-P' option
     
     
     Support services: linux mysql redis pika memcached twemproxies
+    
     
 ## Dependence
 
